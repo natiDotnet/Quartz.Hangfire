@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Quartz.Hangfire\Quartz.Hangfire.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Hangfire" Version="1.8.22" />
+      <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.1.2" />
+      <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+      <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.15.1" />
+      <PackageReference Include="Quartz.Extensions.Hosting" Version="3.15.1" />
+    </ItemGroup>
+
+</Project>
