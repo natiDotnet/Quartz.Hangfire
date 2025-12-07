@@ -1,9 +1,9 @@
-# Quartz.Extensions.Hangfire
+# QuartzHangfire.Extensions
 
-[![NuGet](https://img.shields.io/nuget/v/Quartz.Extensions.Hangfire.svg)](https://www.nuget.org/packages/Quartz.Extensions.Hangfire)
+[![NuGet](https://img.shields.io/nuget/v/QuartzHangfire.Extensions.svg)](https://www.nuget.org/packages/QuartzHangfire.Extensions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Quartz.Extensions.Hangfire is a .NET library that brings Hangfire-like syntax and functionality to Quartz.NET, allowing developers to easily schedule and manage background jobs using familiar method signatures.
+QuartzHangfire.Extensions is a .NET library that brings Hangfire-like syntax and functionality to Quartz.NET, allowing developers to easily schedule and manage background jobs using familiar method signatures.
 
 ## Features
 
@@ -21,13 +21,13 @@ Quartz.Extensions.Hangfire is a .NET library that brings Hangfire-like syntax an
 Install the package from NuGet:
 
 ```bash
-dotnet add package Quartz.Extensions.Hangfire
+dotnet add package QuartzHangfire.Extensions
 ```
 
 Or via Package Manager Console:
 
 ```powershell
-Install-Package Quartz.Extensions.Hangfire
+Install-Package QuartzHangfire.Extensions
 ```
 
 ## Setup

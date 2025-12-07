@@ -5,15 +5,22 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <PackageId>Quartz.Extensions.Hangfire</PackageId>
-        <Title>Quartz.Extensions.Hangfire</Title>
-        <Authors />
-        <PackageTags>quartz, hangfire, quartz.hangfire</PackageTags>
+        <PackageId>QuartzHangfire.Extensions</PackageId>
+        <Title>QuartzHangfire.Extensions</Title>
+        <Authors>Nati</Authors>
+        <PackageTags>quartz, hangfire, quartz.hangfire, background-jobs, scheduler</PackageTags>
+        <Description>Quartz.Extensions.Hangfire brings Hangfire-like syntax and functionality to Quartz.NET, allowing developers to easily schedule and manage background jobs using familiar method signatures.</Description>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageProjectUrl>https://github.com/natiDotnet/Quartz.Hangfire</PackageProjectUrl>
         <RepositoryUrl>https://github.com/natiDotnet/Quartz.Hangfire</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageOutputPath>./nupkgs</PackageOutputPath>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryType>git</RepositoryType>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,6 +30,7 @@
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" Condition="'$(TargetFramework)' == 'net10.0'" />
       <PackageReference Include="Quartz" Version="3.15.1" />
       <None Include="README.md" Pack="true" PackagePath=""/>
+      <None Include="LICENSE" Pack="true" PackagePath=""/>
     </ItemGroup>
 
 </Project>

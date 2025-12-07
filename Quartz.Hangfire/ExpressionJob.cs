@@ -5,8 +5,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Quartz.Hangfire;
 
-public class ExpressionJob(IServiceScopeFactory serviceScopeFactory) : IJob
+/// <summary>
+/// Job implementation that executes expressions using dependency injection
+/// </summary>
+internal class ExpressionJob(IServiceScopeFactory serviceScopeFactory) : IJob
 {
+    /// <summary>
+    /// Executes the job by invoking the specified method with dependency injection
+    /// </summary>
+    /// <param name="context">The job execution context</param>
+    /// <returns>A task representing the asynchronous operation</returns>
     public async Task Execute(IJobExecutionContext context)
     {
         JobDataMap jobData = context.MergedJobDataMap;
