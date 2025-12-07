@@ -1,7 +1,7 @@
-﻿﻿﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -13,11 +13,14 @@
         <PackageProjectUrl>https://github.com/natiDotnet/Quartz.Hangfire</PackageProjectUrl>
         <RepositoryUrl>https://github.com/natiDotnet/Quartz.Hangfire</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageOutputPath>./nupkgs</PackageOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Hangfire.Core" Version="1.8.22" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" Condition="'$(TargetFramework)' == 'net8.0'" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" Condition="'$(TargetFramework)' == 'net9.0'" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" Condition="'$(TargetFramework)' == 'net10.0'" />
       <PackageReference Include="Quartz" Version="3.15.1" />
       <None Include="README.md" Pack="true" PackagePath=""/>
     </ItemGroup>

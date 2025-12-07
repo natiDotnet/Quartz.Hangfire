@@ -121,7 +121,7 @@ The library supports various method signatures:
 
 ## Requirements
 
-- .NET 10.0 or higher
+- .NET 8.0, 9.0, or 10.0
 - Quartz.NET 3.15.1 or higher
 - Hangfire.Core 1.8.22 or higher
 
