@@ -14,10 +14,10 @@ public class ReflectionBenchmark
     // private static readonly object?[] SampleArgs = { "nati" };  // Triggers 2-param overload
 
     private readonly ISchedulerFactory _factory = new StdSchedulerFactory();
-    // [Benchmark(Baseline = true)]
-    // public Task JobCall() => _factory.JobCall("nati");
-    // [Benchmark]
-    // public Task Enqueue() => _factory.Enqueue<Test>(t => t.Tester("nati"));
+    [Benchmark(Baseline = true)]
+    public Task JobCall() => _factory.JobCall("nati");
+    [Benchmark]
+    public Task Enqueue() => _factory.Enqueue<Test>(t => t.Tester("nati"));
     [Benchmark]
     public string Hangfire()
     {

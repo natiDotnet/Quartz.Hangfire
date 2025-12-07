@@ -1,4 +1,4 @@
-namespace Quartz.Console;
+namespace Quartz.Hangfire;
 
 public class Test
 {

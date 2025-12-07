@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Quartz.Console;
+namespace Quartz.Hangfire;
 
 public class TestJob(IServiceScopeFactory scopeFactory) : IJob
 {
