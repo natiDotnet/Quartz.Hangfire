@@ -11,9 +11,9 @@ public class ExpressionJob(IServiceScopeFactory serviceScopeFactory) : IJob
     {
         JobDataMap jobData = context.MergedJobDataMap;
 
-        string data = jobData.GetString("Data")
-                                 ?? throw new ArgumentException("Service data missing");
-        var invocationData = InvocationData.DeserializePayload(data);
+        // string data = jobData.GetString("Data")
+        //                          ?? throw new ArgumentException("Service data missing");
+        var invocationData = jobData["Data"] as InvocationData ?? throw new ArgumentException("Service data missing");
         Job? job = invocationData.DeserializeJob();
         
         using IServiceScope scope = serviceScopeFactory.CreateScope();
@@ -33,10 +33,10 @@ public class ExpressionJob(IServiceScopeFactory serviceScopeFactory) : IJob
                 break;
         }
         bool hasNext = jobData.TryGetString("NextJob", out string? nextJob);
-        if (hasNext && !string.IsNullOrWhiteSpace(nextJob))
+        if (!hasNext || string.IsNullOrWhiteSpace(nextJob))
         {
-            await context.Scheduler.TriggerJob(new JobKey(nextJob));
+            return;
         }
-
+        await context.Scheduler.TriggerJob(new JobKey(nextJob));
     }
 }

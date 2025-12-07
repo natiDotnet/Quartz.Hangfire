@@ -9,23 +9,19 @@ namespace Quartz.Console;
 [RankColumn, MinColumn, MaxColumn]
 public class ReflectionBenchmark
 {
-    // private static readonly Type TestType = typeof(Test);
-    // private static readonly string MethodName = nameof(Test.Tester);
-    // private static readonly object?[] SampleArgs = { "nati" };  // Triggers 2-param overload
-
-    private readonly ISchedulerFactory _factory = new StdSchedulerFactory();
-    [Benchmark(Baseline = true)]
-    public Task JobCall() => _factory.JobCall("nati");
-    [Benchmark]
-    public Task Enqueue() => _factory.Enqueue<Test>(t => t.Tester("nati"));
-    [Benchmark]
-    public string Hangfire()
+    private readonly ISchedulerFactory _factory;
+    private readonly IBackgroundJobClient _hangfire;
+    public ReflectionBenchmark()
     {
         JobStorage.Current = new MemoryStorage();
-        return BackgroundJob.Enqueue<Test>(t => t.Tester("nati"));
+        _factory = new StdSchedulerFactory();
+        _hangfire = new BackgroundJobClient();
     }
-    //     [Benchmark]
-//     public MethodInfo? ResolveMethod() => ExpressionJob.ResolveMethod(TestType, MethodName, SampleArgs);
-//     [Benchmark]
-//     public MethodInfo? ResolveMethod2() => ExpressionJob.ResolveMethod2(TestType, MethodName, SampleArgs);
+    
+    // [Benchmark(Baseline = true)]
+    // public Task QuartzJobCall() => _factory.JobCall("nati");
+    [Benchmark]
+    public Task QuartzEnqueue() => _factory.Enqueue<Test>(t => t.Tester("nati"));
+    // [Benchmark]
+    // public string HangfireEnqueue() => _hangfire.Enqueue<Test>(t => t.Tester("nati"));
 }

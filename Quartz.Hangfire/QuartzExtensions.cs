@@ -35,7 +35,7 @@ public static class QuartzExtensions
         JobDataMap jobData = new()
         {
             {
-                "Data", InvocationData.SerializeJob(job).SerializePayload()
+                "Data", InvocationData.SerializeJob(job)
             }
         };
 
@@ -45,8 +45,8 @@ public static class QuartzExtensions
             .Build();
 
         var triggerBuilder = TriggerBuilder.Create();
-        if (delay.HasValue)
-            triggerBuilder.StartAt(enqueueAt ?? DateTimeOffset.UtcNow.Add(delay.Value));
+        if (delay.HasValue || enqueueAt.HasValue)
+            triggerBuilder.StartAt(enqueueAt ?? DateTimeOffset.UtcNow.Add(delay!.Value));
         else
             triggerBuilder.StartNow();
 
@@ -168,17 +168,17 @@ public static class QuartzExtensions
         return InternalEnqueue(factory, job, queue, delay);
     }
     
-    public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, Expression<Func<T, Task>> expression, TimeSpan delay)
+    public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, Expression<Func<T, Task>> methodCall, TimeSpan delay)
         where T : notnull
     {
-        var job = Job.FromExpression(expression);
+        var job = Job.FromExpression(methodCall);
         return InternalEnqueue(factory, job, null, delay);
     }
     
-    public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, string queue, Expression<Func<T, Task>> expression, TimeSpan delay)
+    public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, string queue, Expression<Func<T, Task>> methodCall, TimeSpan delay)
         where T : notnull
     {
-        var job = Job.FromExpression(expression);
+        var job = Job.FromExpression(methodCall);
         return InternalEnqueue(factory, job, queue, delay);
     }
     
@@ -259,14 +259,12 @@ public static class QuartzExtensions
     public static Task<DateTimeOffset?> Reschedule(this ISchedulerFactory factory, TriggerKey triggerKey, TimeSpan delay)
     {
         ArgumentNullException.ThrowIfNull(triggerKey);
-        ArgumentNullException.ThrowIfNull(delay);
         return InternalReschedule(factory, triggerKey, delay);
     }
     
     public static Task<DateTimeOffset?> Reschedule(this ISchedulerFactory factory, TriggerKey triggerKey, DateTimeOffset enqueueAt)
     {
         ArgumentNullException.ThrowIfNull(triggerKey);
-        ArgumentNullException.ThrowIfNull(enqueueAt);
         return InternalReschedule(factory, triggerKey, enqueueAt: enqueueAt);
     }
     private static async Task<bool> InternalContinueJobWith(ISchedulerFactory factory, Job job, JobKey parentJobKey, string? queue = null)
@@ -274,7 +272,7 @@ public static class QuartzExtensions
         JobDataMap jobData = new()
         {
             {
-                "Data", InvocationData.SerializeJob(job).SerializePayload()
+                "Data", InvocationData.SerializeJob(job)
             }
         };
         var jobName = queue ?? Guid.NewGuid().ToString();
