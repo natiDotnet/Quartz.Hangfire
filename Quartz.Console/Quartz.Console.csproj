@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
       <PackageReference Include="Hangfire" Version="1.8.22" />
       <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.1.2" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
