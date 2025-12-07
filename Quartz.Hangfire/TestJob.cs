@@ -4,7 +4,7 @@ namespace Quartz.Hangfire;
 
 public class TestJob(IServiceScopeFactory scopeFactory) : IJob
 {
-    public Task Execute(IJobExecutionContext context)
+    public async Task Execute(IJobExecutionContext context)
     {
         JobDataMap jobData = context.MergedJobDataMap;
 
@@ -13,7 +13,6 @@ public class TestJob(IServiceScopeFactory scopeFactory) : IJob
         using IServiceScope scope = scopeFactory.CreateScope();
         Test tester = scope.ServiceProvider.GetRequiredService<Test>();
 
-        tester.Tester(name);
-        return Task.CompletedTask;
+        await tester.TesterAsync(name, context.CancellationToken);
     }
 }
