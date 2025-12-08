@@ -18,10 +18,13 @@ public class ReflectionBenchmark
         _hangfire = new BackgroundJobClient();
     }
     
-    // [Benchmark(Baseline = true)]
-    // public Task QuartzJobCall() => _factory.JobCall("nati");
+    [Benchmark(Baseline = true)]
+    public Task QuartzJobCall() => Test.JobCall(_factory,"nati");
     [Benchmark]
-    public Task QuartzEnqueue() => _factory.Enqueue<Test>(t => t.TesterAsync("nati", CancellationToken.None));
-    // [Benchmark]
-    // public string HangfireEnqueue() => _hangfire.Enqueue<Test>(t => t.Tester("nati"));
+    public Task QuartzHangfire() => _factory.Enqueue<Test>(t => t.TesterAsync("nati", CancellationToken.None));
+    [Benchmark]
+    public string HangfireDi() => _hangfire.Enqueue<Test>(t => t.TesterAsync("nati", CancellationToken.None));
+    
+    [Benchmark]
+    public string HangfireStatic() => BackgroundJob.Enqueue<Test>(t => t.TesterAsync("nati", CancellationToken.None));
 }

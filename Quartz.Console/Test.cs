@@ -2,10 +2,35 @@ namespace Quartz.Console;
 
 public class Test
 {
-    public async Task<string> TesterAsync(string name, CancellationToken ct)
+    public async Task<string> TesterAsync(string name, CancellationToken ct = default)
     {
         await Task.Delay(1000, ct);
         System.Console.WriteLine($"Hello Tester {name}");
         return $"Hello Tester {name}";
+    }
+    
+    public static async Task JobCall(ISchedulerFactory factory, string name, TimeSpan? delay = null)
+    {
+        JobDataMap jobData = new()
+        {
+            {
+                "name", name
+            }
+        };
+        IJobDetail job = JobBuilder.Create<TestJob>()
+            .WithIdentity(Guid.NewGuid().ToString())
+            .StoreDurably()
+            .UsingJobData(jobData)
+            .Build();
+
+        var triggerBuilder = TriggerBuilder.Create();
+        if (delay.HasValue)
+            triggerBuilder.StartAt(DateTimeOffset.UtcNow.Add(delay.Value));
+        else
+            triggerBuilder.StartNow();
+
+        ITrigger trigger = triggerBuilder.Build();
+        IScheduler scheduler = await factory.GetScheduler();
+        await scheduler.ScheduleJob(job, trigger);
     }
 }
