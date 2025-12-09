@@ -32,7 +32,7 @@ public static partial class QuartzExtensions
         var jobName = queue ?? Guid.NewGuid().ToString();
         IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
             .WithIdentity(jobName)
-            .StoreDurably()
+            .StoreDurably(true)
             .UsingJobData(jobData)
             .Build();
         
@@ -66,12 +66,12 @@ public static partial class QuartzExtensions
     /// <param name="parentJobKey">The key of the parent job</param>
     /// <param name="methodCall">The action to execute</param>
     /// <returns>True if successful, false if parent job not found</returns>
-    public static Task<bool> ContinueJobWith(
+    public static async Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
         JobKey parentJobKey,
         Expression<Action> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey);
+        return await InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey);
     }
     
     /// <summary>

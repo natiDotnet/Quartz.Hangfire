@@ -34,6 +34,7 @@ public static partial class QuartzExtensions
 
         IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
             .WithIdentity(queue ?? Guid.NewGuid().ToString())
+            .StoreDurably(true)
             .UsingJobData(jobData)
             .Build();
 
