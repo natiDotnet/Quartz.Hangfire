@@ -95,6 +95,9 @@ await schedulerFactory.Schedule("first-job", () => Console.WriteLine("First job"
 
 // Continue with a second job by referencing the first job by its name
 await schedulerFactory.ContinueJobWith(new JobKey("first-job"), () => Console.WriteLine("Second job"));
+// or
+// Continue with a second job by referencing the first job by its name
+await schedulerFactory.ContinueJobWith("first-job", () => Console.WriteLine("Second job"));
 ```
 
 ### Working with Generic Types
