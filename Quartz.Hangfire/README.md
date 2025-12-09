@@ -90,14 +90,11 @@ await schedulerFactory.Schedule("reports", () => GenerateReport(), new DateTime(
 ### Continue Jobs with Chained Execution
 
 ```csharp
-// Create the first job
-var firstJobKey = await schedulerFactory.Enqueue(() => FirstStep());
+// Schedule the first job with a specific name so we can reference it later
+await schedulerFactory.Schedule("first-job", () => Console.WriteLine("First job"), TimeSpan.FromMinutes(1));
 
-// Continue with a second job
-await schedulerFactory.ContinueJobWith(firstJobKey, () => SecondStep());
-
-// Continue with a third job
-await schedulerFactory.ContinueJobWith(secondJobKey, () => ThirdStep());
+// Continue with a second job by referencing the first job by its name
+await schedulerFactory.ContinueJobWith(new JobKey("first-job"), () => Console.WriteLine("Second job"));
 ```
 
 ### Working with Generic Types

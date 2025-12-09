@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+        <Version>1.0.1</Version>
         <PackageId>QuartzHangfire.Extensions</PackageId>
         <Title>QuartzHangfire.Extensions</Title>
         <Authors>Nati</Authors>
