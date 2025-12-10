@@ -1,52 +1,62 @@
 using System.Linq.Expressions;
 using Hangfire.Common;
 using Hangfire.Storage;
+using Quartz.Hangfire.Queue;
 
 namespace Quartz.Hangfire;
 
 /// <summary>
-/// Extension methods for Quartz scheduler operations
+/// Provides extension methods for <see cref="ISchedulerFactory"/> to continue a job with another job.
 /// </summary>
 public static partial class QuartzExtensions
 {
     /// <summary>
-    /// Internal method to continue a job with another job
+    /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="job">The job to continue with</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="queue">Optional queue name</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="job">The continuation job to execute.</param>
+    /// <param name="parentJobKey">The trigger key of the parent job.</param>
+    /// <param name="queue">The queue to enqueue the continuation job to. Defaults to "default".</param>
+    /// <returns>
+    /// A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled;
+    /// otherwise, <c>false</c> if the parent trigger was not found.
+    /// </returns>
     private static async Task<bool> InternalContinueJobWith(
         ISchedulerFactory factory,
         Job job,
-        JobKey parentJobKey,
+        TriggerKey parentJobKey,
         string? queue = null)
     {
+        IScheduler scheduler = await factory.GetScheduler();
+        ITrigger? trigger = await scheduler.GetTrigger(parentJobKey);
+        if (trigger is null)
+        {
+            return false;
+        }
         JobDataMap jobData = new()
         {
             {
                 "Data", InvocationData.SerializeJob(job)
             }
         };
-        var jobName = queue ?? Guid.NewGuid().ToString();
+        string jobName = $"{queue ?? "default"}_{Guid.NewGuid()}";
         IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
             .WithIdentity(jobName)
-            .StoreDurably(true)
+            .StoreDurably()
             .UsingJobData(jobData)
             .Build();
         
-        var scheduler = await factory.GetScheduler();
         // add the new job
         await scheduler.AddJob(expressionJob, true);
         
         // update the parent job
-        IJobDetail? parentJob = await scheduler.GetJobDetail(parentJobKey);
+        IJobDetail? parentJob = await scheduler.GetJobDetail(trigger.JobKey);
         if (parentJob is null)
         {
             return false;
         }
         parentJob.JobDataMap["NextJob"] = jobName;
+        parentJob.JobDataMap["NextJobPriority"] = QuartzQueues.GetPriority(queue);
         if (!parentJob.Durable)
         {
             parentJob = parentJob
@@ -60,266 +70,266 @@ public static partial class QuartzExtensions
     }
     
     /// <summary>
-    /// Continues a job with a synchronous action
+    /// Creates a continuation job that will be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="methodCall">The action to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
+    /// <param name="methodCall">The synchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static async Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
-        JobKey parentJobKey,
+        TriggerKey parentTriggerKey,
         Expression<Action> methodCall)
     {
-        return await InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey);
+        return await InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey);
     }
     
     /// <summary>
-    /// Continues a job with a synchronous action
+    /// Creates a continuation job that will be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="methodCall">The action to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
+    /// <param name="methodCall">The synchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static async Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
-        string parentJobKey,
+        string parentTriggerKey,
         Expression<Action> methodCall)
     {
-        return await InternalContinueJobWith(factory, Job.FromExpression(methodCall), JobKey.Create(parentJobKey));
+        return await InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey));
     }
     
     /// <summary>
-    /// Continues a job with a generic synchronous action
+    /// Creates a continuation job that will be executed after the parent job completes.
     /// </summary>
-    /// <typeparam name="T">The type parameter for the action</typeparam>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="methodCall">The action to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
+    /// <param name="methodCall">The synchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
-        JobKey parentJobKey,
+        TriggerKey parentTriggerKey,
         Expression<Action<T>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey);
     }
     
     /// <summary>
-    /// Continues a job with a generic synchronous action
+    /// Creates a continuation job that will be executed after the parent job completes.
     /// </summary>
-    /// <typeparam name="T">The type parameter for the action</typeparam>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="methodCall">The action to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
+    /// <param name="methodCall">The synchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
-        string parentJobKey,
+        string parentTriggerKey,
         Expression<Action<T>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), JobKey.Create(parentJobKey));
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey));
     }
     
     /// <summary>
-    /// Continues a job with a synchronous action in a specified queue
+    /// Creates a continuation job in a specific queue that will be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="queue">The queue name</param>
-    /// <param name="methodCall">The action to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
+    /// <param name="queue">The queue to place the continuation job in.</param>
+    /// <param name="methodCall">The synchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
-        JobKey parentJobKey,
+        TriggerKey parentTriggerKey,
         string queue,
         Expression<Action> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey, queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue);
     }
     
     /// <summary>
-    /// Continues a job with a synchronous action in a specified queue
+    /// Creates a continuation job in a specific queue that will be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="queue">The queue name</param>
-    /// <param name="methodCall">The action to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
+    /// <param name="queue">The queue to place the continuation job in.</param>
+    /// <param name="methodCall">The synchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
-        string parentJobKey,
+        string parentTriggerKey,
         string queue,
         Expression<Action> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), JobKey.Create(parentJobKey), queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue);
     }
     
     /// <summary>
-    /// Continues a job with a generic synchronous action in a specified queue
+    /// Creates a continuation job in a specific queue that will be executed after the parent job completes.
     /// </summary>
-    /// <typeparam name="T">The type parameter for the action</typeparam>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="queue">The queue name</param>
-    /// <param name="methodCall">The action to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
+    /// <param name="queue">The queue to place the continuation job in.</param>
+    /// <param name="methodCall">The synchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
-        JobKey parentJobKey,
+        TriggerKey parentTriggerKey,
         string queue,
         Expression<Action<T>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey, queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue);
     }
     
     /// <summary>
-    /// Continues a job with a generic synchronous action in a specified queue
+    /// Creates a continuation job in a specific queue that will be executed after the parent job completes.
     /// </summary>
-    /// <typeparam name="T">The type parameter for the action</typeparam>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="queue">The queue name</param>
-    /// <param name="methodCall">The action to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
+    /// <param name="queue">The queue to place the continuation job in.</param>
+    /// <param name="methodCall">The synchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
-        string parentJobKey,
+        string parentTriggerKey,
         string queue,
         Expression<Action<T>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), JobKey.Create(parentJobKey), queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue);
     }
 
     /// <summary>
-    /// Continues a job with an asynchronous function
+    /// Creates a continuation job that will be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="methodCall">The async function to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
+    /// <param name="methodCall">The asynchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
-        JobKey parentJobKey,
+        TriggerKey parentTriggerKey,
         Expression<Func<Task>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey);
     }
     
     /// <summary>
-    /// Continues a job with an asynchronous function
+    /// Creates a continuation job that will be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="methodCall">The async function to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
+    /// <param name="methodCall">The asynchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
-        string parentJobKey,
+        string parentTriggerKey,
         Expression<Func<Task>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), JobKey.Create(parentJobKey));
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey));
     }
     
     /// <summary>
-    /// Continues a job with an asynchronous function in a specified queue
+    /// Creates a continuation job in a specific queue that will be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="queue">The queue name</param>
-    /// <param name="methodCall">The async function to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
+    /// <param name="queue">The queue to place the continuation job in.</param>
+    /// <param name="methodCall">The asynchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
-        JobKey parentJobKey,
+        TriggerKey parentTriggerKey,
         string queue,
         Expression<Func<Task>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey, queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue);
     }
     
     /// <summary>
-    /// Continues a job with an asynchronous function in a specified queue
+    /// Creates a continuation job in a specific queue that will be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="queue">The queue name</param>
-    /// <param name="methodCall">The async function to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
+    /// <param name="queue">The queue to place the continuation job in.</param>
+    /// <param name="methodCall">The asynchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
-        string parentJobKey,
+        string parentTriggerKey,
         string queue,
         Expression<Func<Task>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), JobKey.Create(parentJobKey), queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue);
     }
     
     /// <summary>
-    /// Continues a job with a generic asynchronous function
+    /// Creates a continuation job that will be executed after the parent job completes.
     /// </summary>
-    /// <typeparam name="T">The type parameter for the function</typeparam>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="methodCall">The async function to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
+    /// <param name="methodCall">The asynchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
-        JobKey parentJobKey,
+        TriggerKey parentTriggerKey,
         Expression<Func<T, Task>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey);
     }
     
     /// <summary>
-    /// Continues a job with a generic asynchronous function
+    /// Creates a continuation job that will be executed after the parent job completes.
     /// </summary>
-    /// <typeparam name="T">The type parameter for the function</typeparam>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="methodCall">The async function to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
+    /// <param name="methodCall">The asynchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
-        string parentJobKey,
+        string parentTriggerKey,
         Expression<Func<T, Task>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), JobKey.Create(parentJobKey));
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey));
     }
     
     /// <summary>
-    /// Continues a job with a generic asynchronous function in a specified queue
+    /// Creates a continuation job in a specific queue that will be executed after the parent job completes.
     /// </summary>
-    /// <typeparam name="T">The type parameter for the function</typeparam>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="queue">The queue name</param>
-    /// <param name="methodCall">The async function to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
+    /// <param name="queue">The queue to place the continuation job in.</param>
+    /// <param name="methodCall">The asynchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
-        JobKey parentJobKey,
+        TriggerKey parentTriggerKey,
         string queue,
         Expression<Func<T, Task>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentJobKey, queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue);
     }
     
     /// <summary>
-    /// Continues a job with a generic asynchronous function in a specified queue
+    /// Creates a continuation job in a specific queue that will be executed after the parent job completes.
     /// </summary>
-    /// <typeparam name="T">The type parameter for the function</typeparam>
-    /// <param name="factory">The scheduler factory</param>
-    /// <param name="parentJobKey">The key of the parent job</param>
-    /// <param name="queue">The queue name</param>
-    /// <param name="methodCall">The async function to execute</param>
-    /// <returns>True if successful, false if parent job not found</returns>
+    /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
+    /// <param name="queue">The queue to place the continuation job in.</param>
+    /// <param name="methodCall">The asynchronous action to execute.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
-        string parentJobKey,
+        string parentTriggerKey,
         string queue,
         Expression<Func<T, Task>> methodCall)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), JobKey.Create(parentJobKey), queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue);
     }
 }

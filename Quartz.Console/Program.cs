@@ -16,7 +16,10 @@ var host = Host.CreateDefaultBuilder(args)
     {
         services.AddSingleton<Test>();
         services.AddTransient<ReflectionBenchmark>();
-        services.AddQuartz(q => { q.UseMicrosoftDependencyInjectionJobFactory(); });
+        services.AddQuartz(q =>
+        {
+            q.UseMicrosoftDependencyInjectionJobFactory();
+        });
         services.AddQuartzHostedService();
         services.AddHangfire(config =>
         {
@@ -34,11 +37,10 @@ var host = Host.CreateDefaultBuilder(args)
 await host.StartAsync();
 
 var scheduler = host.Services.GetRequiredService<ISchedulerFactory>();
-// BackgroundJob.Enqueue<Test>(e => e.Tester("nati"));
 await scheduler.Enqueue<Test>(t => t.TesterAsync("nano", CancellationToken.None));// here it is!
-await scheduler.Enqueue(() => Console.WriteLine($"Hello World {DateTime.Now}"));
-await scheduler.Schedule("hello", () => Console.WriteLine($"Hello After {DateTime.Now}"), TimeSpan.FromMinutes(1));
-await scheduler.ContinueJobWith(new JobKey("hello"), () => Console.WriteLine($"Hello After Hello {DateTime.Now}"));
+await scheduler.Enqueue("first", () => Console.WriteLine($"Hello World {DateTime.Now}"));
+await scheduler.Schedule("second", () => Console.WriteLine($"Hello After {DateTime.Now}"), TimeSpan.FromMinutes(1));
+await scheduler.ContinueJobWith("third", () => Console.WriteLine($"Hello After Hello {DateTime.Now}"));
 // Now you can enqueue anything
 // JobStorage.Current = new MemoryStorage();
 // BenchmarkRunner.Run<ReflectionBenchmark>();

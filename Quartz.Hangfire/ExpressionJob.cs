@@ -2,6 +2,7 @@ using System.Reflection;
 using Hangfire.Common;
 using Hangfire.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Quartz.Hangfire.Queue;
 
 namespace Quartz.Hangfire;
 
@@ -41,10 +42,16 @@ internal class ExpressionJob(IServiceScopeFactory serviceScopeFactory) : IJob
                 break;
         }
         bool hasNext = jobData.TryGetString("NextJob", out string? nextJob);
+        jobData.TryGetInt("NextJobPriority", out int priority);
         if (!hasNext || string.IsNullOrWhiteSpace(nextJob))
         {
             return;
         }
-        await context.Scheduler.TriggerJob(new JobKey(nextJob));
+        var trigger = TriggerBuilder.Create()
+            .ForJob(nextJob)
+            .StartNow()
+            .WithPriority(priority)
+            .Build();
+        await context.Scheduler.ScheduleJob(trigger);
     }
 }

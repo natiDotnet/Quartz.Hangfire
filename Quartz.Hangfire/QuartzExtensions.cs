@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Hangfire.Common;
 using Hangfire.Storage;
+using Quartz.Hangfire.Queue;
 
 namespace Quartz.Hangfire;
 
@@ -25,6 +26,7 @@ public static partial class QuartzExtensions
         TimeSpan? delay = null,
         DateTimeOffset? enqueueAt = null)
     {
+        queue ??= "default";
         JobDataMap jobData = new()
         {
             {
@@ -33,8 +35,8 @@ public static partial class QuartzExtensions
         };
 
         IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
-            .WithIdentity(queue ?? Guid.NewGuid().ToString())
-            .StoreDurably(true)
+            .WithIdentity($"{queue}_{Guid.NewGuid()}")
+            .StoreDurably()
             .UsingJobData(jobData)
             .Build();
 
@@ -43,9 +45,12 @@ public static partial class QuartzExtensions
             triggerBuilder.StartAt(enqueueAt ?? DateTimeOffset.UtcNow.Add(delay!.Value));
         else
             triggerBuilder.StartNow();
+        
+        int priority = QuartzQueues.GetPriority(queue);
 
         ITrigger trigger = triggerBuilder
-            .WithIdentity($"{queue ?? Guid.NewGuid().ToString()}-trigger")
+            .WithIdentity($"{queue}_{Guid.NewGuid()}-trigger")
+            .WithPriority(priority)
             .Build();
         IScheduler scheduler = await factory.GetScheduler();
         await scheduler.ScheduleJob(expressionJob, trigger);

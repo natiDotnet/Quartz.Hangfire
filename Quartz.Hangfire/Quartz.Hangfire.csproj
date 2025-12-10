@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <Version>1.0.1</Version>
+        <Version>1.0.2</Version>
         <PackageId>QuartzHangfire.Extensions</PackageId>
         <Title>QuartzHangfire.Extensions</Title>
         <Authors>Nati</Authors>
@@ -22,6 +22,7 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageReleaseNotes>Added overloaded ContinueJobWith methods supporting string keys (in addition to JobKey) and queue parameter support for string keys</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,7 +32,9 @@
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" Condition="'$(TargetFramework)' == 'net10.0'" />
       <None Include="README.md" Pack="true" PackagePath=""/>
       <None Include="LICENSE" Pack="true" PackagePath=""/>
+      <None Include="CHANGELOG.md" Pack="true" PackagePath=""/>
       <PackageReference Include="Quartz" Version="3.8.1" />
+      <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.8.1" />
     </ItemGroup>
 
 </Project>
