@@ -7,14 +7,14 @@ QuartzHangfire.Extensions is a .NET library that brings Hangfire-like syntax and
 
 ## Features
 
-- **Hangfire-like Syntax**: Use familiar Hangfire-style method calls with Quartz.NET under the hood
-- **Immediate Execution**: Enqueue jobs for immediate execution
-- **Delayed Execution**: Schedule jobs to run after a specified delay
-- **Scheduled Execution**: Schedule jobs to run at a specific time
-- **Job Continuation**: Chain jobs together to run one after another
-- **Queue Support**: Assign jobs to specific queues
-- **Generic Method Support**: Works with both static and instance methods
-- **Async/Await Support**: Full support for asynchronous methods
+- **Hangfire-like Syntax**: Use familiar Hangfire-style method calls with Quartz.NET under the hood.
+- **Immediate Execution**: Enqueue jobs for immediate execution.
+- **Delayed Execution**: Schedule jobs to run after a specified delay.
+- **Job Continuation**: Chain jobs together to run one after another.
+- **Job Deletion**: Delete jobs by their `JobKey`.
+- **Job Rescheduling**: Reschedule jobs with a new trigger time.
+- **Queue Support**: Assign jobs to specific queues and configure queue priorities.
+- **Async/Await Support**: Full support for asynchronous methods.
 
 ## Installation
 
@@ -24,7 +24,7 @@ Install the package from NuGet:
 dotnet add package QuartzHangfire.Extensions
 ```
 
-Or via Package Manager Console:
+Or via the Package Manager Console:
 
 ```powershell
 Install-Package QuartzHangfire.Extensions
@@ -32,108 +32,151 @@ Install-Package QuartzHangfire.Extensions
 
 ## Setup
 
-To use Quartz.Extensions.Hangfire, configure Quartz in your application's service collection:
+To use QuartzHangfire.Extensions, configure Quartz in your application's service collection.
+
+### Basic Configuration
+
+At a minimum, you need to register Quartz and the hosted service.
 
 ```csharp
 using Quartz;
-using Quartz.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddQuartz(q => 
 { 
-    q.UseMicrosoftDependencyInjectionJobFactory(); 
+    q.UseMicrosoftDependencyInjectionJobFactory();
 });
 
-builder.Services.AddQuartzHostedService();
+builder.Services.AddQuartzHostedService(options =>
+{
+    options.WaitForJobsToComplete = true;
+});
 
-// Get the scheduler factory from the service provider
 var app = builder.Build();
 ISchedulerFactory schedulerFactory = app.Services.GetRequiredService<ISchedulerFactory>();
 ```
+
+### Optional: Configuring Queues
+
+For job prioritization, you can optionally configure queues using the `UseQueueing` extension. The order of queues in the array determines their priority (from highest to lowest).
+
+```csharp
+using Quartz.Hangfire; // Make sure to include this namespace
+
+builder.Services.AddQuartz(q => 
+{ 
+    q.UseMicrosoftDependencyInjectionJobFactory();
+    
+    // This is optional. If not configured, all jobs run with default priority.
+    q.UseQueueing(c => c.Queues = ["critical", "high", "default", "low"]);
+});
+```
+
+- Jobs enqueued to `"critical"` will be processed before jobs in `"high"`, and so on.
+- If a job is enqueued without a specific queue, it will be placed in the `"default"` queue.
+- If `UseQueueing` is not called, all jobs will run with the default Quartz priority.
 
 ## Usage Examples
 
 ### Enqueue Immediate Jobs
 
-```csharp
-// Enqueue a static method
-await schedulerFactory.Enqueue(() => Console.WriteLine("Hello World"));
+Jobs that should run as soon as possible.
 
-// Enqueue an instance method
+```csharp
+// Enqueue a static method to the "default" queue
+var triggerKey = await schedulerFactory.Enqueue(() => Console.WriteLine("Hello World"));
+
+// Enqueue an instance method of a registered service
 await schedulerFactory.Enqueue<MyService>(x => x.ProcessDataAsync());
 
-// Enqueue with a specific queue
+// Enqueue to a specific queue
 await schedulerFactory.Enqueue("critical", () => CriticalOperation());
 ```
 
 ### Schedule Delayed Jobs
 
-```csharp
-// Schedule a job to run after 5 minutes
-await schedulerFactory.Schedule(() => SendEmail(), TimeSpan.FromMinutes(5));
-
-// Schedule with a specific queue
-await schedulerFactory.Schedule("email", () => SendEmail(), TimeSpan.FromMinutes(5));
-```
-
-### Schedule Jobs at Specific Times
+Jobs that should run after a specified delay.
 
 ```csharp
-// Schedule a job to run at a specific time
-await schedulerFactory.Schedule(() => GenerateReport(), new DateTime(2025, 12, 31, 23, 59, 59));
+// Schedule a job to run after 5 minutes in the "default" queue
+var triggerKey = await schedulerFactory.Schedule(() => SendEmail(), TimeSpan.FromMinutes(5));
 
 // Schedule with a specific queue
-await schedulerFactory.Schedule("reports", () => GenerateReport(), new DateTime(2025, 12, 31, 23, 59, 59));
+await schedulerFactory.Schedule("emails", () => SendEmail(), TimeSpan.FromMinutes(5));
 ```
 
 ### Continue Jobs with Chained Execution
 
-```csharp
-// Schedule the first job with a specific name so we can reference it later
-await schedulerFactory.Schedule("first-job", () => Console.WriteLine("First job"), TimeSpan.FromMinutes(1));
+Create a continuation job that runs after a parent job completes.
 
-// Continue with a second job by referencing the first job by its name
-await schedulerFactory.ContinueJobWith(new JobKey("first-job"), () => Console.WriteLine("Second job"));
-// or
-// Continue with a second job by referencing the first job by its name
-await schedulerFactory.ContinueJobWith("first-job", () => Console.WriteLine("Second job"));
+```csharp
+// 1. Schedule the first job
+var parentTriggerKey = await schedulerFactory.Schedule(() => Console.WriteLine("First job"), TimeSpan.FromMinutes(1));
+
+// 2. Chain a second job to run after the first one completes
+await schedulerFactory.ContinueJobWith(parentTriggerKey, () => Console.WriteLine("Second job"));
+
+// You can also use a string representation of the trigger key
+await schedulerFactory.ContinueJobWith(parentTriggerKey.ToString(), () => Console.WriteLine("Another continuation"));
 ```
 
-### Working with Generic Types
+### Delete a Job
+
+Remove a job from the scheduler using its `JobKey`.
 
 ```csharp
-// Enqueue instance methods with parameters
-await schedulerFactory.Enqueue<MyService>(x => x.ProcessOrder(orderId));
+// First, get the JobKey from the trigger
+var trigger = await scheduler.GetTrigger(triggerKey);
+if (trigger != null)
+{
+    var jobKey = trigger.JobKey;
+    
+    // Delete the job
+    bool deleted = await schedulerFactory.Delete(jobKey);
+    if (deleted)
+    {
+        Console.WriteLine("Job deleted successfully.");
+    }
+}
+```
 
-// Schedule async methods
-await schedulerFactory.Schedule<MyService>(x => x.ProcessOrderAsync(orderId), TimeSpan.FromMinutes(10));
+### Reschedule a Job
+
+Change the schedule of an existing job.
+
+```csharp
+// Reschedule a job to run at a new time (e.g., 10 minutes from now)
+bool rescheduled = await schedulerFactory.Reschedule(triggerKey, TimeSpan.FromMinutes(10));
+if (rescheduled)
+{
+    Console.WriteLine("Job rescheduled successfully.");
+}
 ```
 
 ## Supported Method Signatures
 
-The library supports various method signatures:
+The library supports various method signatures for both static and instance methods:
 
-- `Action` - Synchronous methods without parameters
-- `Func<Task>` - Asynchronous methods without parameters
-- `Action<T>` - Synchronous methods with parameters
-- `Func<T, Task>` - Asynchronous methods with parameters
+- `Expression<Action>`
+- `Expression<Func<Task>>`
+- `Expression<Action<T>>`
+- `Expression<Func<T, Task>>`
 
 ## Requirements
 
-- .NET 8.0, 9.0, or 10.0
+- .NET 8.0 or .NET 9.0
 - Quartz.NET 3.8.1 or higher
-- Hangfire.Core 1.8.0 or higher
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Fork the repository.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some amazing feature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
 
 ## License
 
@@ -141,5 +184,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- [Quartz.NET](https://www.quartz-scheduler.net/) - The powerful job scheduling system for .NET
-- [Hangfire](https://www.hangfire.io/) - Easy background job processing for .NET
+- [Quartz.NET](https://www.quartz-scheduler.net/) - The powerful job scheduling system for .NET.
+- [Hangfire](https://www.hangfire.io/) - The library that inspired this project's syntax.
+```

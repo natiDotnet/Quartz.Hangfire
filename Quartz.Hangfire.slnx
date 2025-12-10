@@ -1,5 +1,6 @@
 <Solution>
   
   <Project Path="Quartz.Console/Quartz.Console.csproj" />
+  <Project Path="Quartz.Hangfire.Tests/Quartz.Hangfire.Tests.csproj" />
   <Project Path="Quartz.Hangfire/Quartz.Hangfire.csproj" />
 </Solution>

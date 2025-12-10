@@ -10,6 +10,7 @@ using Quartz.Hangfire;
 using Quartz.Impl;
 using Quartz;
 using Quartz.Console;
+using Quartz.Hangfire.Queue;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
@@ -19,6 +20,7 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddQuartz(q =>
         {
             q.UseMicrosoftDependencyInjectionJobFactory();
+            q.UseQueueing(c => c.Queues = ["critical", "high", "default", "low"]);
         });
         services.AddQuartzHostedService();
         services.AddHangfire(config =>
