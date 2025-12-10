@@ -39,8 +39,8 @@ await host.StartAsync();
 var scheduler = host.Services.GetRequiredService<ISchedulerFactory>();
 await scheduler.Enqueue<Test>(t => t.TesterAsync("nano", CancellationToken.None));// here it is!
 await scheduler.Enqueue("first", () => Console.WriteLine($"Hello World {DateTime.Now}"));
-await scheduler.Schedule("second", () => Console.WriteLine($"Hello After {DateTime.Now}"), TimeSpan.FromMinutes(1));
-await scheduler.ContinueJobWith("third", () => Console.WriteLine($"Hello After Hello {DateTime.Now}"));
+var triggerKey = await scheduler.Schedule("second", () => Console.WriteLine($"Hello After {DateTime.Now}"), TimeSpan.FromMinutes(1));
+await scheduler.ContinueJobWith(triggerKey, () => Console.WriteLine($"Hello After Hello {DateTime.Now}"));
 // Now you can enqueue anything
 // JobStorage.Current = new MemoryStorage();
 // BenchmarkRunner.Run<ReflectionBenchmark>();

@@ -7,7 +7,7 @@ public sealed class QuartzQueueOptions
     public string[] Queues { get; set; } = ["default"];
 }
 
-public static class QuartzQueues
+internal static class QuartzQueues
 {
     [SuppressMessage("ReSharper", "InconsistentNaming")] 
     private static readonly Dictionary<string, int> _queues = new(StringComparer.OrdinalIgnoreCase);
