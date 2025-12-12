@@ -30,6 +30,22 @@ Or via the Package Manager Console:
 Install-Package QuartzHangfire.Extensions
 ```
 
+## Performance
+
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26100.7171/24H2/2024Update/HudsonValley)
+12th Gen Intel Core i5-1235U 1.30GHz, 1 CPU, 12 logical and 10 physical cores
+.NET SDK 10.0.100
+
+```
+| Method         | Mean     | Error    | StdDev   | Median   | Min       | Max      | Ratio | RatioSD | Rank | Gen0   | Gen1   | Allocated | Alloc Ratio |
+|--------------- |---------:|---------:|---------:|---------:|----------:|---------:|------:|--------:|-----:|-------:|-------:|----------:|------------:|
+| QuartzJobCall  | 11.58 us | 0.749 us | 2.148 us | 10.85 us |  9.083 us | 19.27 us |  1.03 |    0.26 |    1 | 0.5188 | 0.1373 |   3.18 KB |        1.00 |
+| QuartzHangfire | 13.56 us | 0.271 us | 0.509 us | 13.50 us | 12.543 us | 14.85 us |  1.21 |    0.20 |    2 | 1.3428 | 0.3662 |    8.3 KB |        2.61 |
+| HangfireDi     | 12.17 us | 0.238 us | 0.284 us | 12.07 us | 11.810 us | 12.77 us |  1.08 |    0.18 |    1 | 2.5635 | 0.6714 |  15.83 KB |        4.98 |
+| HangfireStatic | 27.63 us | 0.318 us | 0.265 us | 27.55 us | 27.161 us | 28.08 us |  2.46 |    0.40 |    3 | 3.0518 | 0.7324 |  19.44 KB |        6.11 |
+
+```
+
 ## Setup
 
 To use QuartzHangfire.Extensions, configure Quartz in your application's service collection.

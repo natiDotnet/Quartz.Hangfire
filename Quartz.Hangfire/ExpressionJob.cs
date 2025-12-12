@@ -1,4 +1,5 @@
 using System.Reflection;
+using Hangfire;
 using Hangfire.Common;
 using Hangfire.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,40 +19,74 @@ internal class ExpressionJob(IServiceScopeFactory serviceScopeFactory) : IJob
     /// <returns>A task representing the asynchronous operation</returns>
     public async Task Execute(IJobExecutionContext context)
     {
-        JobDataMap jobData = context.MergedJobDataMap;
+        var invocationData = context.MergedJobDataMap["Data"] as InvocationData ?? throw new ArgumentException("Service data missing");
+        var job = invocationData.DeserializeJob();
 
-        // string data = jobData.GetString("Data")
-        //                          ?? throw new ArgumentException("Service data missing");
-        var invocationData = jobData["Data"] as InvocationData ?? throw new ArgumentException("Service data missing");
-        Job? job = invocationData.DeserializeJob();
-        
-        using IServiceScope scope = serviceScopeFactory.CreateScope();
-        MethodInfo? method = job.Method;
-        
-        object? service = method.IsStatic ? null : scope.ServiceProvider.GetRequiredService(job.Type);
-        object? result = method.Invoke(service, job.Args.ToArray());
+        var executionException = await ExecuteJobInternalAsync(job);
 
-        switch (result)
+        await HandleContinuationAsync(context, executionException);
+    }
+
+    private async Task<JobExecutionException?> ExecuteJobInternalAsync(Job job)
+    {
+        try
         {
-            case Task task:
-                await task.ConfigureAwait(false);
-                break;
-            // If Task<T> — unwrap
-            case ValueTask valueTask:
-                await valueTask.ConfigureAwait(false);
-                break;
+            using var scope = serviceScopeFactory.CreateScope();
+            var method = job.Method;
+            var service = method.IsStatic ? null : scope.ServiceProvider.GetRequiredService(job.Type);
+            var result = method.Invoke(service, job.Args.ToArray());
+
+            switch (result)
+            {
+                case Task task:
+                    await task.ConfigureAwait(false);
+                    break;
+                case ValueTask valueTask:
+                    await valueTask.ConfigureAwait(false);
+                    break;
+            }
+
+            return null;
         }
-        bool hasNext = jobData.TryGetString("NextJob", out string? nextJob);
-        jobData.TryGetInt("NextJobPriority", out int priority);
-        if (!hasNext || string.IsNullOrWhiteSpace(nextJob))
+        catch (Exception ex)
         {
+            return new JobExecutionException(ex);
+        }
+    }
+    
+    private static async Task HandleContinuationAsync(IJobExecutionContext context, JobExecutionException? exception)
+    {
+        var jobData = context.MergedJobDataMap;
+
+        if (!jobData.TryGetString("NextJob", out var nextKey) || string.IsNullOrWhiteSpace(nextKey))
+        {
+            if (exception != null) throw exception;
             return;
         }
+
+        var options = JobContinuationOptions.OnlyOnSucceededState;
+        if (jobData.TryGetInt("Options", out var value))
+        {
+            options = (JobContinuationOptions)value;
+        }
+        var state = exception is null ? JobContinuationOptions.OnlyOnSucceededState : JobContinuationOptions.OnlyOnDeletedState;
+
+        if (options != JobContinuationOptions.OnAnyFinishedState && options != state)
+        {
+            if (exception != null) throw exception;
+            return;
+        }
+        jobData.TryGetInt("NextJobPriority", out int priority);
         var trigger = TriggerBuilder.Create()
-            .ForJob(nextJob)
+            .ForJob(nextKey)
             .StartNow()
             .WithPriority(priority)
             .Build();
         await context.Scheduler.ScheduleJob(trigger);
+
+        if (exception != null)
+        {
+            throw exception;
+        }
     }
 }

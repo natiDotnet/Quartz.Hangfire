@@ -11,6 +11,11 @@ namespace Quartz.Hangfire;
 public static partial class QuartzExtensions
 {
     /// <summary>
+    /// The default queue name if none is specified
+    /// </summary>
+    private const string Default = "default";
+    
+    /// <summary>
     /// Enqueues a job for execution using Quartz scheduler
     /// </summary>
     /// <param name="factory">The scheduler factory used to get the Quartz scheduler instance</param>
@@ -22,22 +27,13 @@ public static partial class QuartzExtensions
     private static async Task<TriggerKey> InternalEnqueue(
         ISchedulerFactory factory,
         Job job,
-        string? queue = null,
+        string queue = Default,
         TimeSpan? delay = null,
         DateTimeOffset? enqueueAt = null)
     {
-        queue ??= "default";
-        JobDataMap jobData = new()
-        {
-            {
-                "Data", InvocationData.SerializeJob(job)
-            }
-        };
-
         IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
             .WithIdentity($"{queue}_{Guid.NewGuid()}")
-            .StoreDurably()
-            .UsingJobData(jobData)
+            .UsingJobData(new JobDataMap { { "Data", InvocationData.SerializeJob(job) } })
             .Build();
 
         var triggerBuilder = TriggerBuilder.Create();
@@ -49,6 +45,7 @@ public static partial class QuartzExtensions
         int priority = QuartzQueues.GetPriority(queue);
 
         ITrigger trigger = triggerBuilder
+            .ForJob(expressionJob)
             .WithIdentity($"{queue}_{Guid.NewGuid()}-trigger")
             .WithPriority(priority)
             .Build();

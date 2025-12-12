@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Hangfire;
 using Hangfire.Common;
 using Hangfire.Storage;
 using Quartz.Hangfire.Queue;
@@ -15,7 +16,7 @@ public static partial class QuartzExtensions
     /// </summary>
     /// <param name="factory">The scheduler factory.</param>
     /// <param name="job">The continuation job to execute.</param>
-    /// <param name="parentJobKey">The trigger key of the parent job.</param>
+    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="queue">The queue to enqueue the continuation job to. Defaults to "default".</param>
     /// <returns>
     /// A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled;
@@ -24,39 +25,35 @@ public static partial class QuartzExtensions
     private static async Task<bool> InternalContinueJobWith(
         ISchedulerFactory factory,
         Job job,
-        TriggerKey parentJobKey,
-        string? queue = null)
+        TriggerKey parentTriggerKey,
+        string queue = Default,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
         IScheduler scheduler = await factory.GetScheduler();
-        ITrigger? trigger = await scheduler.GetTrigger(parentJobKey);
-        if (trigger is null)
+        ITrigger? parentTrigger = await scheduler.GetTrigger(parentTriggerKey);
+        if (parentTrigger is null)
         {
             return false;
         }
-        JobDataMap jobData = new()
-        {
-            {
-                "Data", InvocationData.SerializeJob(job)
-            }
-        };
-        string jobName = $"{queue ?? "default"}_{Guid.NewGuid()}";
+        string jobName = $"{queue}_{Guid.NewGuid()}";
         IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
             .WithIdentity(jobName)
             .StoreDurably()
-            .UsingJobData(jobData)
+            .UsingJobData(new JobDataMap { { "Data", InvocationData.SerializeJob(job) } })
             .Build();
         
         // add the new job
         await scheduler.AddJob(expressionJob, true);
         
         // update the parent job
-        IJobDetail? parentJob = await scheduler.GetJobDetail(trigger.JobKey);
+        IJobDetail? parentJob = await scheduler.GetJobDetail(parentTrigger.JobKey);
         if (parentJob is null)
         {
             return false;
         }
         parentJob.JobDataMap["NextJob"] = jobName;
         parentJob.JobDataMap["NextJobPriority"] = QuartzQueues.GetPriority(queue);
+        parentTrigger.JobDataMap["Options"] = (int)options;
         if (!parentJob.Durable)
         {
             parentJob = parentJob

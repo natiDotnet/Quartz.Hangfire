@@ -20,6 +20,11 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddQuartz(q =>
         {
             q.UseMicrosoftDependencyInjectionJobFactory();
+            q.UsePersistentStore(p =>
+            {
+                p.UseNewtonsoftJsonSerializer();
+                p.UsePostgres("Host=localhost;Port=5432;Database=quartz;Username=postgres;Password=root");
+            });
             q.UseQueueing(c => c.Queues = ["critical", "high", "default", "low"]);
         });
         services.AddQuartzHostedService();
@@ -44,7 +49,5 @@ await scheduler.Enqueue("first", () => Console.WriteLine($"Hello World {DateTime
 var triggerKey = await scheduler.Schedule("second", () => Console.WriteLine($"Hello After {DateTime.Now}"), TimeSpan.FromMinutes(1));
 await scheduler.ContinueJobWith(triggerKey, () => Console.WriteLine($"Hello After Hello {DateTime.Now}"));
 // Now you can enqueue anything
-// JobStorage.Current = new MemoryStorage();
-// BenchmarkRunner.Run<ReflectionBenchmark>();
-// await scheduler.Enqueue<Test>(t => t.Tester("Nati"));
+BenchmarkRunner.Run<ReflectionBenchmark>();
 await host.RunAsync();

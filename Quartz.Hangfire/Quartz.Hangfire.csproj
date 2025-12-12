@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <Version>1.0.2</Version>
+        <Version>1.0.3</Version>
         <PackageId>QuartzHangfire.Extensions</PackageId>
         <Title>QuartzHangfire.Extensions</Title>
         <Authors>Nati</Authors>
@@ -22,7 +22,7 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <PackageReleaseNotes>Added overloaded ContinueJobWith methods supporting string keys (in addition to JobKey) and queue parameter support for string keys</PackageReleaseNotes>
+        <PackageReleaseNotes>fix: queue support</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
