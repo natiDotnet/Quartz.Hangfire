@@ -2,7 +2,7 @@ namespace Quartz.Hangfire.Listeners;
 
 public sealed class MySchedulerListener : ISchedulerListener
 {
-    public Task SchedulerInStandbyMode(CancellationToken cancellationToken = new CancellationToken())
+    public Task SchedulerInStandbyMode(CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
@@ -11,11 +11,11 @@ public sealed class MySchedulerListener : ISchedulerListener
         Console.WriteLine("Quartz scheduler started");
         return Task.CompletedTask;
     }
-    public Task SchedulerStarting(CancellationToken cancellationToken = new CancellationToken())
+    public Task SchedulerStarting(CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
-    public Task SchedulerShutdown(CancellationToken cancellationToken = new CancellationToken())
+    public Task SchedulerShutdown(CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
