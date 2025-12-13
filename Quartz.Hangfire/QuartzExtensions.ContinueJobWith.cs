@@ -18,6 +18,7 @@ public static partial class QuartzExtensions
     /// <param name="job">The continuation job to execute.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="queue">The queue to enqueue the continuation job to. Defaults to "default".</param>
+    /// <param name="options">The continuation options. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/></param>
     /// <returns>
     /// A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger was not found.
@@ -35,50 +36,37 @@ public static partial class QuartzExtensions
         {
             return false;
         }
-        string jobName = $"{queue}_{Guid.NewGuid()}";
-        IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
+        string jobName = $"{queue}_{Guid.NewGuid()}-trigger";
+        var nextTrigger = parentTrigger.GetTriggerBuilder()
             .WithIdentity(jobName)
-            .StoreDurably()
+            .ForJob(parentTrigger.JobKey)
             .UsingJobData(new JobDataMap { { "Data", InvocationData.SerializeJob(job) } })
+            .WithPriority(QuartzQueues.GetPriority(queue))
+            .StartAt(DateTime.MaxValue)
             .Build();
-        
-        // add the new job
-        await scheduler.AddJob(expressionJob, true);
-        
-        // update the parent job
-        IJobDetail? parentJob = await scheduler.GetJobDetail(parentTrigger.JobKey);
-        if (parentJob is null)
-        {
-            return false;
-        }
-        parentJob.JobDataMap["NextJob"] = jobName;
-        parentJob.JobDataMap["NextJobPriority"] = QuartzQueues.GetPriority(queue);
+
+        await scheduler.ScheduleJob(nextTrigger);
+        parentTrigger.JobDataMap["NextTrigger"] = jobName;
         parentTrigger.JobDataMap["Options"] = (int)options;
-        if (!parentJob.Durable)
-        {
-            parentJob = parentJob
-                .GetJobBuilder()
-                .StoreDurably()
-                .Build();
-        }
-        await scheduler.AddJob(parentJob, replace: true);
-        
+        await scheduler.RescheduleJob(parentTriggerKey, parentTrigger);
         return true;
     }
-    
+
     /// <summary>
     /// Creates a continuation job that will be executed after the parent job completes.
     /// </summary>
     /// <param name="factory">The scheduler factory.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="methodCall">The synchronous action to execute.</param>
+    /// <param name="options">The continuation options. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/></param>
     /// <returns>A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled; otherwise, <c>false</c>.</returns>
     public static async Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
-        Expression<Action> methodCall)
+        Expression<Action> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return await InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey);
+        return await InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, options: options);
     }
     
     /// <summary>

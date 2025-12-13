@@ -1,7 +1,10 @@
 using System.Linq.Expressions;
 using Hangfire.Common;
 using Hangfire.Storage;
+using Microsoft.Extensions.DependencyInjection;
+using Quartz.Hangfire.Listeners;
 using Quartz.Hangfire.Queue;
+using Quartz.Impl;
 
 namespace Quartz.Hangfire;
 
@@ -14,7 +17,7 @@ public static partial class QuartzExtensions
     /// The default queue name if none is specified
     /// </summary>
     private const string Default = "default";
-    
+
     /// <summary>
     /// Enqueues a job for execution using Quartz scheduler
     /// </summary>
@@ -23,13 +26,15 @@ public static partial class QuartzExtensions
     /// <param name="queue">Optional queue name. If not specified, a new GUID will be used</param>
     /// <param name="delay">Optional delay before the job starts executing</param>
     /// <param name="enqueueAt">Optional specific date/time when the job should start executing</param>
+    /// <param name="scheduler">The scheduler used to get the Quartz scheduler instance</param>
     /// <returns>The TriggerKey of the scheduled job</returns>
     private static async Task<TriggerKey> InternalEnqueue(
-        ISchedulerFactory factory,
+        ISchedulerFactory? factory,
         Job job,
         string queue = Default,
         TimeSpan? delay = null,
-        DateTimeOffset? enqueueAt = null)
+        DateTimeOffset? enqueueAt = null,
+        IScheduler? scheduler = null)
     {
         IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
             .WithIdentity($"{queue}_{Guid.NewGuid()}")
@@ -49,8 +54,11 @@ public static partial class QuartzExtensions
             .WithIdentity($"{queue}_{Guid.NewGuid()}-trigger")
             .WithPriority(priority)
             .Build();
-        IScheduler scheduler = await factory.GetScheduler();
+        scheduler ??= await factory?.GetScheduler()!;
+        ArgumentNullException.ThrowIfNull(scheduler);
         await scheduler.ScheduleJob(expressionJob, trigger);
         return trigger.Key;
     }
+
+    
 }
