@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Quartz.Hangfire.Listeners;
 using Quartz.Impl.Matchers;
 
@@ -14,14 +15,12 @@ public static class QuartzQueueingExtensions
         QuartzQueues.Configure(opts.Queues);
     }
 
-    public static void UseListeners(this IServiceCollectionQuartzConfigurator services)
+    public static void UseListeners(this IServiceCollectionQuartzConfigurator quartz, IServiceCollection serviceCollection)
     {
-        services.AddJobListener<JobListener>(
+        serviceCollection.AddScoped<IJobExecutionStep, RetryStep>();
+        serviceCollection.AddScoped<IJobExecutionStep, NextTriggerStep>();
+        quartz.AddJobListener<PipelineJobListener>(
             EverythingMatcher<JobKey>.AllJobs()
-        );
-
-        services.AddTriggerListener<LoggingTriggerListener>(
-            EverythingMatcher<TriggerKey>.AllTriggers()
         );
     }
 }

@@ -2,21 +2,11 @@ using Hangfire;
 
 namespace Quartz.Hangfire.Listeners;
 
-/// <summary>
-/// Job Listener
-/// </summary>
-public class JobListener : IJobListener
+public class NextTriggerStep : IJobExecutionStep
 {
-
-    public string Name => "ChainJobListener";
-
-    public Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
+    public Task OnExecuting(IJobExecutionContext context, CancellationToken cancellationToken, Func<Task> next)
         => Task.CompletedTask;
-
-    public Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
-        => Task.CompletedTask;
-
-    public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException? jobException, CancellationToken cancellationToken = default)
+    public async Task OnExecuted(IJobExecutionContext context, JobExecutionException? exception, CancellationToken cancellationToken, Func<Task> next)
     {
         var jobData = context.Trigger.JobDataMap;
 
@@ -31,7 +21,7 @@ public class JobListener : IJobListener
         {
             options = (JobContinuationOptions)value;
         }
-        JobContinuationOptions state = jobException is null ? JobContinuationOptions.OnlyOnSucceededState : JobContinuationOptions.OnlyOnDeletedState;
+        JobContinuationOptions state = exception is null ? JobContinuationOptions.OnlyOnSucceededState : JobContinuationOptions.OnlyOnDeletedState;
 
         var oldTrigger = await context.Scheduler.GetTrigger(new TriggerKey(nextKey), cancellationToken);
         if (options != JobContinuationOptions.OnAnyFinishedState && options != state)
@@ -45,7 +35,6 @@ public class JobListener : IJobListener
         var trigger = oldTrigger!.GetTriggerBuilder()
             .ForJob(nextKey)
             .StartNow()
-            // .WithPriority(priority)
             .Build();
         await context.Scheduler.RescheduleJob(oldTrigger.Key, trigger, cancellationToken);
     }

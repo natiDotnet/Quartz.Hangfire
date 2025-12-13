@@ -25,7 +25,7 @@ var host = Host.CreateDefaultBuilder(args)
                 p.UseNewtonsoftJsonSerializer();
                 p.UsePostgres("Host=localhost;Port=5432;Database=quartz;Username=postgres;Password=root");
             });
-            q.UseListeners();
+            q.UseListeners(services);
             q.UseQueueing(c => c.Queues = ["critical", "high", "default", "low"]);
         });
         services.AddQuartzHostedService();

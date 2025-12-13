@@ -1,7 +1,10 @@
+using Hangfire;
+
 namespace Quartz.Console;
 
 public class Test
 {
+    [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Delete)]
     public async Task<string> TesterAsync(string name, CancellationToken ct = default)
     {
         await Task.Delay(1000, ct);

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Hangfire;
 using Hangfire.Common;
 using Hangfire.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,7 +39,6 @@ public static partial class QuartzExtensions
     {
         IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
             .WithIdentity($"{queue}_{Guid.NewGuid()}")
-            .UsingJobData(new JobDataMap { { "Data", InvocationData.SerializeJob(job) } })
             .Build();
 
         var triggerBuilder = TriggerBuilder.Create();
@@ -49,8 +49,19 @@ public static partial class QuartzExtensions
         
         int priority = QuartzQueues.GetPriority(queue);
 
+        var filters = JobFilterProviders.Providers.GetFilters(job);
+        var retry = filters
+            .Select(f => f.Instance)
+            .OfType<AutomaticRetryAttribute>()
+            .First();
+
         ITrigger trigger = triggerBuilder
             .ForJob(expressionJob)
+            .UsingJobData(new JobDataMap
+            {
+                { "Data", InvocationData.SerializeJob(job) },
+                { "Retry", retry }
+            })
             .WithIdentity($"{queue}_{Guid.NewGuid()}-trigger")
             .WithPriority(priority)
             .Build();
