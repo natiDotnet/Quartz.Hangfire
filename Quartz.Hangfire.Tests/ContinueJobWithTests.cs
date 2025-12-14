@@ -16,8 +16,9 @@ public class ContinueJobWithTests
         _schedulerFactory.GetScheduler(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(_scheduler));
         
-        // This is important for the JobDataMap to be modifiable in the tests.
         _jobDetail.JobDataMap.Returns(new JobDataMap());
+        _trigger.JobDataMap.Returns(new JobDataMap());
+        _trigger.GetTriggerBuilder().Returns(TriggerBuilder.Create());
     }
 
     [Fact]
@@ -31,7 +32,6 @@ public class ContinueJobWithTests
         _trigger.JobKey.Returns(parentJobKey);
         _scheduler.GetJobDetail(parentJobKey, Arg.Any<CancellationToken>())!.Returns(Task.FromResult(_jobDetail));
         
-        // Set Durable to true to prevent a call to GetJobBuilder() on the mock, which would fail.
         _jobDetail.Durable.Returns(true); 
 
         // Act
@@ -39,8 +39,8 @@ public class ContinueJobWithTests
 
         // Assert
         Assert.True(result);
-        // One call for the new continuation job, and one to update the parent job.
-        await _scheduler.Received(2).AddJob(Arg.Any<IJobDetail>(), true, Arg.Any<CancellationToken>());
+        await _scheduler.Received(1).ScheduleJob(Arg.Any<ITrigger>(), Arg.Any<CancellationToken>());
+        await _scheduler.Received(1).RescheduleJob(parentTriggerKey, _trigger, Arg.Any<CancellationToken>());
     }
     
     [Fact]
@@ -56,7 +56,8 @@ public class ContinueJobWithTests
 
         // Assert
         Assert.False(result);
-        await _scheduler.DidNotReceive().AddJob(Arg.Any<IJobDetail>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await _scheduler.DidNotReceive().ScheduleJob(Arg.Any<ITrigger>(), Arg.Any<CancellationToken>());
+        await _scheduler.DidNotReceive().RescheduleJob(Arg.Any<TriggerKey>(), Arg.Any<ITrigger>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -71,14 +72,15 @@ public class ContinueJobWithTests
         _scheduler.GetTrigger(parentTriggerKey, Arg.Any<CancellationToken>())!.Returns(Task.FromResult(_trigger));
         _trigger.JobKey.Returns(parentJobKey);
         _scheduler.GetJobDetail(parentJobKey, Arg.Any<CancellationToken>())!.Returns(Task.FromResult(_jobDetail));
-        _jobDetail.Durable.Returns(true); // Prevent call to GetJobBuilder()
+        _jobDetail.Durable.Returns(true);
 
         // Act
         var result = await _schedulerFactory.ContinueJobWith(parentTriggerKey, queue, () => TestJob.Execute());
 
         // Assert
         Assert.True(result);
-        await _scheduler.Received(2).AddJob(Arg.Any<IJobDetail>(), true, Arg.Any<CancellationToken>());
+        await _scheduler.Received(1).ScheduleJob(Arg.Any<ITrigger>(), Arg.Any<CancellationToken>());
+        await _scheduler.Received(1).RescheduleJob(parentTriggerKey, _trigger, Arg.Any<CancellationToken>());
     }
     
     [Fact]
@@ -96,8 +98,8 @@ public class ContinueJobWithTests
         var result = await _schedulerFactory.ContinueJobWith(parentTriggerKey, () => TestJob.Execute());
 
         // Assert
-        Assert.False(result);
-        // The continuation job is added before the parent is fetched, so one call is expected.
-        await _scheduler.Received(1).AddJob(Arg.Any<IJobDetail>(), true, Arg.Any<CancellationToken>());
+        Assert.True(result);
+        await _scheduler.Received(1).ScheduleJob(Arg.Any<ITrigger>(), Arg.Any<CancellationToken>());
+        await _scheduler.Received(1).RescheduleJob(parentTriggerKey, _trigger, Arg.Any<CancellationToken>());
     }
 }

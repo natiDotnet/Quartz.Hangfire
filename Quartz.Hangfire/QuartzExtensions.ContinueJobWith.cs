@@ -79,9 +79,10 @@ public static partial class QuartzExtensions
     public static async Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
         string parentTriggerKey,
-        Expression<Action> methodCall)
+        Expression<Action> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return await InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey));
+        return await InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options);
     }
     
     /// <summary>
@@ -95,9 +96,10 @@ public static partial class QuartzExtensions
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
-        Expression<Action<T>> methodCall)
+        Expression<Action<T>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, options: options);
     }
     
     /// <summary>
@@ -111,9 +113,10 @@ public static partial class QuartzExtensions
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
         string parentTriggerKey,
-        Expression<Action<T>> methodCall)
+        Expression<Action<T>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey));
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options);
     }
     
     /// <summary>
@@ -128,9 +131,10 @@ public static partial class QuartzExtensions
         this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         string queue,
-        Expression<Action> methodCall)
+        Expression<Action> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue, options: options);
     }
     
     /// <summary>
@@ -145,9 +149,10 @@ public static partial class QuartzExtensions
         this ISchedulerFactory factory,
         string parentTriggerKey,
         string queue,
-        Expression<Action> methodCall)
+        Expression<Action> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options: options);
     }
     
     /// <summary>
@@ -163,9 +168,10 @@ public static partial class QuartzExtensions
         this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         string queue,
-        Expression<Action<T>> methodCall)
+        Expression<Action<T>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue, options: options);
     }
     
     /// <summary>
@@ -181,9 +187,10 @@ public static partial class QuartzExtensions
         this ISchedulerFactory factory,
         string parentTriggerKey,
         string queue,
-        Expression<Action<T>> methodCall)
+        Expression<Action<T>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options: options);
     }
 
     /// <summary>
@@ -196,9 +203,10 @@ public static partial class QuartzExtensions
     public static Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
-        Expression<Func<Task>> methodCall)
+        Expression<Func<Task>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, options: options);
     }
     
     /// <summary>
@@ -211,9 +219,10 @@ public static partial class QuartzExtensions
     public static Task<bool> ContinueJobWith(
         this ISchedulerFactory factory,
         string parentTriggerKey,
-        Expression<Func<Task>> methodCall)
+        Expression<Func<Task>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey));
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options);
     }
     
     /// <summary>
@@ -228,9 +237,10 @@ public static partial class QuartzExtensions
         this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         string queue,
-        Expression<Func<Task>> methodCall)
+        Expression<Func<Task>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue, options: options);
     }
     
     /// <summary>
@@ -245,9 +255,10 @@ public static partial class QuartzExtensions
         this ISchedulerFactory factory,
         string parentTriggerKey,
         string queue,
-        Expression<Func<Task>> methodCall)
+        Expression<Func<Task>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options: options);
     }
     
     /// <summary>
@@ -261,9 +272,10 @@ public static partial class QuartzExtensions
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
-        Expression<Func<T, Task>> methodCall)
+        Expression<Func<T, Task>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, options: options);
     }
     
     /// <summary>
@@ -277,9 +289,10 @@ public static partial class QuartzExtensions
     public static Task<bool> ContinueJobWith<T>(
         this ISchedulerFactory factory,
         string parentTriggerKey,
-        Expression<Func<T, Task>> methodCall)
+        Expression<Func<T, Task>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey));
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options);
     }
     
     /// <summary>
@@ -295,9 +308,10 @@ public static partial class QuartzExtensions
         this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         string queue,
-        Expression<Func<T, Task>> methodCall)
+        Expression<Func<T, Task>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), parentTriggerKey, queue, options: options);
     }
     
     /// <summary>
@@ -313,8 +327,9 @@ public static partial class QuartzExtensions
         this ISchedulerFactory factory,
         string parentTriggerKey,
         string queue,
-        Expression<Func<T, Task>> methodCall)
+        Expression<Func<T, Task>> methodCall,
+        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue);
+        return InternalContinueJobWith(factory, Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options);
     }
 }
