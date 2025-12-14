@@ -3,6 +3,7 @@ using Hangfire;
 using Hangfire.MemoryStorage;
 using Quartz.Hangfire;
 using Quartz.Impl;
+using BackgroundJob = Hangfire.BackgroundJob;
 
 namespace Quartz.Console;
 [MemoryDiagnoser]

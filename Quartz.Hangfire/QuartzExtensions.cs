@@ -29,9 +29,9 @@ public static partial class QuartzExtensions
     /// <param name="enqueueAt">Optional specific date/time when the job should start executing</param>
     /// <param name="scheduler">The scheduler used to get the Quartz scheduler instance</param>
     /// <returns>The TriggerKey of the scheduled job</returns>
-    private static async Task<TriggerKey> InternalEnqueue(
-        ISchedulerFactory? factory,
+    internal static async Task<TriggerKey> InternalEnqueue(
         Job job,
+        ISchedulerFactory? factory = null,
         string queue = Default,
         TimeSpan? delay = null,
         DateTimeOffset? enqueueAt = null,
@@ -65,10 +65,16 @@ public static partial class QuartzExtensions
             .WithIdentity($"{queue}_{Guid.NewGuid()}-trigger")
             .WithPriority(priority)
             .Build();
-        scheduler ??= await factory?.GetScheduler()!;
-        ArgumentNullException.ThrowIfNull(scheduler);
+        scheduler ??= await GetScheduler(factory);
         await scheduler.ScheduleJob(expressionJob, trigger);
         return trigger.Key;
+    }
+
+    private static async Task<IScheduler> GetScheduler(ISchedulerFactory? factory = null)
+    {
+        return factory is not null 
+            ? await factory.GetScheduler() 
+            : await StdSchedulerFactory.GetDefaultScheduler();
     }
 
     
