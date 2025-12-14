@@ -7,57 +7,13 @@ using Quartz.Hangfire.Queue;
 namespace Quartz.Hangfire;
 
 /// <summary>
-/// Provides extension methods for <see cref="ISchedulerFactory"/> to schedule continuation jobs.
+/// Provides static methods for creating Hangfire continuation jobs that execute after a Quartz job.
 /// </summary>
-public static partial class QuartzExtensions
+public static partial class BackgroundJob
 {
     /// <summary>
     /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory.</param>
-    /// <param name="job">The continuation job to execute.</param>
-    /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
-    /// <param name="queue">The queue to enqueue the continuation job to. Defaults to "default".</param>
-    /// <param name="options">The continuation options. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/></param>
-    /// <param name="scheduler">The scheduler </param>
-    /// <returns>
-    /// A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled;
-    /// otherwise, <c>false</c> if the parent trigger was not found.
-    /// </returns>
-    internal static async Task<bool> InternalContinueJobWith(
-        Job job,
-        TriggerKey parentTriggerKey,
-        string queue = Default,
-        JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState,
-        ISchedulerFactory? factory = null,
-        IScheduler? scheduler = null)
-    {
-        scheduler ??= await GetScheduler(factory);
-        ITrigger? parentTrigger = await scheduler.GetTrigger(parentTriggerKey);
-        if (parentTrigger is null)
-        {
-            return false;
-        }
-        string jobName = $"{queue}_{Guid.NewGuid()}-trigger";
-        var nextTrigger = parentTrigger.GetTriggerBuilder()
-            .WithIdentity(jobName)
-            .ForJob(parentTrigger.JobKey)
-            .UsingJobData(new JobDataMap { { "Data", InvocationData.SerializeJob(job) } })
-            .WithPriority(QuartzQueues.GetPriority(queue))
-            .StartAt(DateTime.MaxValue)
-            .Build();
-
-        await scheduler.ScheduleJob(nextTrigger);
-        parentTrigger.JobDataMap["NextTrigger"] = jobName;
-        parentTrigger.JobDataMap["Options"] = (int)options;
-        await scheduler.RescheduleJob(parentTriggerKey, parentTrigger);
-        return true;
-    }
-
-    /// <summary>
-    /// Schedules a continuation job to be executed after the parent job completes.
-    /// </summary>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
     /// <param name="options">The options for the continuation job. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/>.</param>
@@ -66,18 +22,16 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static async Task<bool> ContinueJobWith(
-        this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         Expression<Action> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return await InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, options: options, factory: factory);
+        return await QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
     /// <param name="options">The options for the continuation job. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/>.</param>
@@ -86,19 +40,17 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static async Task<bool> ContinueJobWith(
-        this ISchedulerFactory factory,
         string parentTriggerKey,
         Expression<Action> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return await InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options, factory: factory);
+        return await QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
     /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
     /// <param name="options">The options for the continuation job. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/>.</param>
@@ -107,19 +59,17 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith<T>(
-        this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         Expression<Action<T>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
     /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
     /// <param name="options">The options for the continuation job. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/>.</param>
@@ -128,18 +78,16 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith<T>(
-        this ISchedulerFactory factory,
         string parentTriggerKey,
         Expression<Action<T>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job in a specific queue to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="queue">The queue to enqueue the continuation job to.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
@@ -149,19 +97,17 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith(
-        this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         string queue,
         Expression<Action> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, queue, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, queue, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job in a specific queue to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
     /// <param name="queue">The queue to enqueue the continuation job to.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
@@ -171,20 +117,18 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith(
-        this ISchedulerFactory factory,
         string parentTriggerKey,
         string queue,
         Expression<Action> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job in a specific queue to be executed after the parent job completes.
     /// </summary>
     /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="queue">The queue to enqueue the continuation job to.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
@@ -194,20 +138,18 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith<T>(
-        this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         string queue,
         Expression<Action<T>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, queue, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, queue, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job in a specific queue to be executed after the parent job completes.
     /// </summary>
     /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
     /// <param name="queue">The queue to enqueue the continuation job to.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
@@ -217,19 +159,17 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith<T>(
-        this ISchedulerFactory factory,
         string parentTriggerKey,
         string queue,
         Expression<Action<T>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options: options);
     }
 
     /// <summary>
     /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
     /// <param name="options">The options for the continuation job. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/>.</param>
@@ -238,18 +178,16 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith(
-        this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         Expression<Func<Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
     /// <param name="options">The options for the continuation job. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/>.</param>
@@ -258,18 +196,16 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith(
-        this ISchedulerFactory factory,
         string parentTriggerKey,
         Expression<Func<Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job in a specific queue to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="queue">The queue to enqueue the continuation job to.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
@@ -279,19 +215,17 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith(
-        this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         string queue,
         Expression<Func<Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, queue, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, queue, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job in a specific queue to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
     /// <param name="queue">The queue to enqueue the continuation job to.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
@@ -301,20 +235,18 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith(
-        this ISchedulerFactory factory,
         string parentTriggerKey,
         string queue,
         Expression<Func<Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
     /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
     /// <param name="options">The options for the continuation job. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/>.</param>
@@ -323,19 +255,17 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith<T>(
-        this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         Expression<Func<T, Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
     /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
     /// <param name="options">The options for the continuation job. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/>.</param>
@@ -344,19 +274,17 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith<T>(
-        this ISchedulerFactory factory,
         string parentTriggerKey,
         Expression<Func<T, Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job in a specific queue to be executed after the parent job completes.
     /// </summary>
     /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="queue">The queue to enqueue the continuation job to.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
@@ -366,20 +294,18 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith<T>(
-        this ISchedulerFactory factory,
         TriggerKey parentTriggerKey,
         string queue,
         Expression<Func<T, Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, queue, options: options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), parentTriggerKey, queue, options: options);
     }
     
     /// <summary>
     /// Schedules a continuation job in a specific queue to be executed after the parent job completes.
     /// </summary>
     /// <typeparam name="T">The type of the service whose method will be invoked.</typeparam>
-    /// <param name="factory">The <see cref="ISchedulerFactory"/> instance.</param>
     /// <param name="parentTriggerKey">The string representation of the parent job's trigger key.</param>
     /// <param name="queue">The queue to enqueue the continuation job to.</param>
     /// <param name="methodCall">The method call expression representing the job to execute.</param>
@@ -389,12 +315,11 @@ public static partial class QuartzExtensions
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
     public static Task<bool> ContinueJobWith<T>(
-        this ISchedulerFactory factory,
         string parentTriggerKey,
         string queue,
         Expression<Func<T, Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
     {
-        return InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options, factory: factory);
+        return QuartzExtensions.InternalContinueJobWith(Job.FromExpression(methodCall), new TriggerKey(parentTriggerKey), queue, options);
     }
 }

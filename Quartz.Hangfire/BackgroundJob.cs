@@ -6,7 +6,7 @@ namespace Quartz.Hangfire;
 /// <summary>
 /// Provides methods to enqueue background jobs.
 /// </summary>
-public static class BackgroundJob
+public static partial class BackgroundJob
 {
     /// <summary>
     /// Schedules a background job to be executed as soon as possible.
