@@ -17,10 +17,15 @@ public static class QuartzQueueingExtensions
 
     public static void UseListeners(this IServiceCollectionQuartzConfigurator quartz, IServiceCollection serviceCollection)
     {
-        serviceCollection.AddScoped<IJobExecutionStep, RetryStep>();
-        serviceCollection.AddScoped<IJobExecutionStep, NextTriggerStep>();
+        serviceCollection.AddScoped<IJobExecutionStep, DisableConcurrentExecution>();
+        serviceCollection.AddScoped<IJobExecutionStep, AutomaticRetry>();
+        serviceCollection.AddScoped<IJobExecutionStep, ContinueJob>();
         quartz.AddJobListener<PipelineJobListener>(
             EverythingMatcher<JobKey>.AllJobs()
+        );
+        
+        quartz.AddTriggerListener<ConcurrencyTriggerListener>(
+            EverythingMatcher<TriggerKey>.AllTriggers()
         );
     }
 }

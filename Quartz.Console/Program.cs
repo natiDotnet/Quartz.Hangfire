@@ -10,7 +10,9 @@ using Quartz.Hangfire;
 using Quartz.Console;
 using Quartz.Hangfire.Listeners;
 using Quartz.Hangfire.Queue;
+using Quartz.Impl;
 using Quartz.Impl.Matchers;
+using BackgroundJob = Quartz.Hangfire.BackgroundJob;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
@@ -20,11 +22,11 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddQuartz(q =>
         {
             q.UseMicrosoftDependencyInjectionJobFactory();
-            q.UsePersistentStore(p =>
-            {
-                p.UseNewtonsoftJsonSerializer();
-                p.UsePostgres("Host=localhost;Port=5432;Database=quartz;Username=postgres;Password=root");
-            });
+            // q.UsePersistentStore(p =>
+            // {
+            //     p.UseNewtonsoftJsonSerializer();
+            //     p.UsePostgres("Host=localhost;Port=5432;Database=quartz;Username=postgres;Password=root");
+            // });
             q.UseListeners(services);
             q.UseQueueing(c => c.Queues = ["critical", "high", "default", "low"]);
         });
@@ -46,9 +48,14 @@ await host.StartAsync();
 
 var scheduler = host.Services.GetRequiredService<ISchedulerFactory>();
 await scheduler.Enqueue<Test>(t => t.TesterAsync("nano", CancellationToken.None));// here it is!
-await scheduler.Enqueue("first", () => Console.WriteLine($"Hello World {DateTime.Now}"));
-var triggerKey = await scheduler.Schedule("critical", () => Console.WriteLine($"Hello After {DateTime.Now}"), TimeSpan.FromMinutes(1));
-await scheduler.ContinueJobWith(triggerKey, "critical", () => Console.WriteLine($"Hello After Hello {DateTime.Now}"));
+
+await Task.Delay(5000);
+await scheduler.Enqueue<Test>(t => t.TesterAsync("big", CancellationToken.None));// here it is!
+// await scheduler.Enqueue("first", () => Console.WriteLine($"Hello World {DateTime.Now}"));
+// var triggerKey = await scheduler.Schedule("critical", () => Console.WriteLine($"Hello After {DateTime.Now}"), TimeSpan.FromMinutes(1));
+// await scheduler.ContinueJobWith(triggerKey, "critical", () => Console.WriteLine($"Hello After Hello {DateTime.Now}"), JobContinuationOptions.OnlyOnDeletedState);
+// await BackgroundJob.Enqueue(() => Console.WriteLine($"Hello World {DateTime.Now}"));
 // Now you can enqueue anything
-BenchmarkRunner.Run<ReflectionBenchmark>();
+// BenchmarkRunner.Run<ReflectionBenchmark>();
+// BackgroundJob.ContinueJobWith("test", () => Console.WriteLine("test"));
 await host.RunAsync();

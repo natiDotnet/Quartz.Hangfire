@@ -17,8 +17,7 @@ public static partial class QuartzExtensions
     /// <returns>The trigger key for the scheduled job</returns>
     public static Task<TriggerKey> Schedule(this ISchedulerFactory factory, Expression<Action> methodCall, TimeSpan delay)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, delay: delay);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory, delay: delay);
     }
     
     /// <summary>
@@ -31,8 +30,7 @@ public static partial class QuartzExtensions
     /// <returns>The trigger key for the scheduled job</returns>
     public static Task<TriggerKey> Schedule(this ISchedulerFactory factory, string queue, Expression<Action> methodCall, TimeSpan delay)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue, delay);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory, delay);
     }
     
     /// <summary>
@@ -44,8 +42,7 @@ public static partial class QuartzExtensions
     /// <returns>The trigger key for the scheduled job</returns>
     public static Task<TriggerKey> Schedule(this ISchedulerFactory factory, Expression<Func<Task>> methodCall, TimeSpan delay)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, delay: delay);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory, delay: delay);
     }
     
     /// <summary>
@@ -58,8 +55,7 @@ public static partial class QuartzExtensions
     /// <returns>The trigger key for the scheduled job</returns>
     public static Task<TriggerKey> Schedule(this ISchedulerFactory factory, string queue, Expression<Func<Task>> methodCall, TimeSpan delay)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue, delay);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory, delay);
     }
     
     /// <summary>
@@ -71,8 +67,7 @@ public static partial class QuartzExtensions
     /// <returns>The trigger key for the scheduled job</returns>
     public static Task<TriggerKey> Schedule(this ISchedulerFactory factory, Expression<Action> methodCall, DateTimeOffset enqueueAt)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, enqueueAt: enqueueAt);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory, enqueueAt: enqueueAt);
     }
     
     /// <summary>
@@ -85,8 +80,7 @@ public static partial class QuartzExtensions
     /// <returns>The trigger key for the scheduled job</returns>
     public static Task<TriggerKey> Schedule(this ISchedulerFactory factory, string queue, Expression<Action> methodCall, DateTimeOffset enqueueAt)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue, enqueueAt: enqueueAt);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory, enqueueAt: enqueueAt);
     }
     
     /// <summary>
@@ -98,8 +92,7 @@ public static partial class QuartzExtensions
     /// <returns>The trigger key for the scheduled job</returns>
     public static Task<TriggerKey> Schedule(this ISchedulerFactory factory, Expression<Func<Task>> methodCall, DateTimeOffset enqueueAt)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, enqueueAt: enqueueAt);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory, enqueueAt: enqueueAt);
     }
     
     /// <summary>
@@ -112,8 +105,7 @@ public static partial class QuartzExtensions
     /// <returns>The trigger key for the scheduled job</returns>
     public static Task<TriggerKey> Schedule(this ISchedulerFactory factory, string queue, Expression<Func<Task>> methodCall, DateTimeOffset enqueueAt)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue, enqueueAt: enqueueAt);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory, enqueueAt: enqueueAt);
     }
     
     /// <summary>
@@ -127,8 +119,7 @@ public static partial class QuartzExtensions
     public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, Expression<Action<T>> methodCall, TimeSpan delay)
         where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, delay: delay);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory, delay: delay);
     }
     
     /// <summary>
@@ -143,8 +134,7 @@ public static partial class QuartzExtensions
     public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, string queue, Expression<Action<T>> methodCall, TimeSpan delay)
         where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue, delay);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory, delay);
     }
     
     /// <summary>
@@ -158,8 +148,7 @@ public static partial class QuartzExtensions
     public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, Expression<Func<T, Task>> methodCall, TimeSpan delay)
         where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, delay: delay);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory, delay: delay);
     }
     
     /// <summary>
@@ -174,8 +163,7 @@ public static partial class QuartzExtensions
     public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, string queue, Expression<Func<T, Task>> methodCall, TimeSpan delay)
         where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue, delay);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory, delay);
     }
     
     /// <summary>
@@ -189,8 +177,7 @@ public static partial class QuartzExtensions
     public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, Expression<Action<T>> methodCall, DateTimeOffset enqueueAt)
         where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, enqueueAt: enqueueAt);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory, enqueueAt: enqueueAt);
     }
     
     /// <summary>
@@ -205,8 +192,7 @@ public static partial class QuartzExtensions
     public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, string queue, Expression<Action<T>> methodCall, DateTimeOffset enqueueAt)
         where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue, enqueueAt: enqueueAt);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory, enqueueAt: enqueueAt);
     }
     
     /// <summary>
@@ -220,8 +206,7 @@ public static partial class QuartzExtensions
     public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, Expression<Func<T, Task>> methodCall, DateTimeOffset enqueueAt)
         where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, enqueueAt: enqueueAt);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory, enqueueAt: enqueueAt);
     }
     
     /// <summary>
@@ -236,8 +221,7 @@ public static partial class QuartzExtensions
     public static Task<TriggerKey> Schedule<T>(this ISchedulerFactory factory, string queue, Expression<Func<T, Task>> methodCall, DateTimeOffset enqueueAt)
         where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue, enqueueAt: enqueueAt);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory, enqueueAt: enqueueAt);
     }
     
 }

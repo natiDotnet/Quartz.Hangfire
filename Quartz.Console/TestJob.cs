@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Quartz.Console;
 
+[DisallowConcurrentExecution]
 public class TestJob(IServiceScopeFactory scopeFactory) : IJob
 {
     public async Task Execute(IJobExecutionContext context)

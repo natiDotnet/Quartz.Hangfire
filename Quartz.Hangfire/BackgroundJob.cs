@@ -27,8 +27,7 @@ public static partial class BackgroundJob
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue(string queue, Expression<Action> methodCall)
     {
-        var job = Job.FromExpression(methodCall);
-        return QuartzExtensions.InternalEnqueue(job, queue: queue);
+        return QuartzExtensions.InternalEnqueue(Job.FromExpression(methodCall, queue));
     }
     
     /// <summary>
@@ -38,8 +37,7 @@ public static partial class BackgroundJob
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue(Expression<Func<Task>> methodCall)
     {
-        var job = Job.FromExpression(methodCall);
-        return QuartzExtensions.InternalEnqueue(job);
+        return QuartzExtensions.InternalEnqueue(Job.FromExpression(methodCall));
     }
     
     /// <summary>
@@ -50,8 +48,7 @@ public static partial class BackgroundJob
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue(string queue, Expression<Func<Task>> methodCall)
     {
-        var job = Job.FromExpression(methodCall);
-        return QuartzExtensions.InternalEnqueue(job, queue: queue);
+        return QuartzExtensions.InternalEnqueue(Job.FromExpression(methodCall, queue));
     }
     
     /// <summary>
@@ -62,8 +59,7 @@ public static partial class BackgroundJob
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue<T>(Expression<Action<T>> methodCall) where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return QuartzExtensions.InternalEnqueue(job);
+        return QuartzExtensions.InternalEnqueue(Job.FromExpression(methodCall));
     }
     
     /// <summary>
@@ -75,8 +71,7 @@ public static partial class BackgroundJob
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue<T>(string queue, Expression<Action<T>> methodCall) where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return QuartzExtensions.InternalEnqueue(job, queue: queue);
+        return QuartzExtensions.InternalEnqueue(Job.FromExpression(methodCall, queue));
     }
     
     /// <summary>
@@ -87,8 +82,7 @@ public static partial class BackgroundJob
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue<T>(Expression<Func<T, Task>> methodCall) where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return QuartzExtensions.InternalEnqueue(job);
+        return QuartzExtensions.InternalEnqueue(Job.FromExpression(methodCall));
     }
     
     /// <summary>
@@ -100,8 +94,7 @@ public static partial class BackgroundJob
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue<T>(string queue, Expression<Func<T, Task>> methodCall) where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return QuartzExtensions.InternalEnqueue(job, queue: queue);
+        return QuartzExtensions.InternalEnqueue(Job.FromExpression(methodCall, queue));
     }
     
 }

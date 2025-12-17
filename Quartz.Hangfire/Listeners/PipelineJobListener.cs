@@ -17,7 +17,7 @@ public sealed class PipelineJobListener(IEnumerable<IJobExecutionStep> steps) : 
         {
             if (index < _steps.Count)
             {
-                var step = _steps[index++];
+                IJobExecutionStep step = _steps[index++];
                 await step.OnExecuting(context, cancellationToken, next);
             }
         };
@@ -35,7 +35,7 @@ public sealed class PipelineJobListener(IEnumerable<IJobExecutionStep> steps) : 
         Func<Task> next = null!;
         next = async () =>
         {
-            if (index < _steps.Count())
+            if (index < _steps.Count)
             {
                 var step = _steps[index++];
                 await step.OnExecuted(context, jobException, cancellationToken, next);
@@ -48,6 +48,8 @@ public sealed class PipelineJobListener(IEnumerable<IJobExecutionStep> steps) : 
     public Task JobExecutionVetoed(
         IJobExecutionContext context,
         CancellationToken cancellationToken = default)
-        => Task.CompletedTask;
+    {
+        return Task.CompletedTask;
+    }
 }
 

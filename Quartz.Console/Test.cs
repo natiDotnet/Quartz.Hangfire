@@ -4,10 +4,11 @@ namespace Quartz.Console;
 
 public class Test
 {
-    [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Delete)]
+    [DisableConcurrentExecution(30)]
+    // [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Delete, DelaysInSeconds = [10], Order = 2)]
     public async Task<string> TesterAsync(string name, CancellationToken ct = default)
     {
-        await Task.Delay(1000, ct);
+        await Task.Delay(5000, ct);
         System.Console.WriteLine($"Hello Tester {name}");
         return $"Hello Tester {name}";
     }

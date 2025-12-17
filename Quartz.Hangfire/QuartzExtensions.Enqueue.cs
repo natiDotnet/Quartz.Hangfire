@@ -16,8 +16,7 @@ public static partial class QuartzExtensions
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue(this ISchedulerFactory factory, Expression<Action> methodCall)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory);
     }
     
     /// <summary>
@@ -29,8 +28,7 @@ public static partial class QuartzExtensions
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue(this ISchedulerFactory factory, string queue, Expression<Action> methodCall)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory);
     }
     
     /// <summary>
@@ -41,8 +39,7 @@ public static partial class QuartzExtensions
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue(this ISchedulerFactory factory, Expression<Func<Task>> methodCall)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory);
     }
     
     /// <summary>
@@ -54,8 +51,7 @@ public static partial class QuartzExtensions
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue(this ISchedulerFactory factory, string queue, Expression<Func<Task>> methodCall)
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory);
     }
     
     /// <summary>
@@ -67,8 +63,7 @@ public static partial class QuartzExtensions
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue<T>(this ISchedulerFactory factory, Expression<Action<T>> methodCall) where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory);
     }
     
     /// <summary>
@@ -81,8 +76,7 @@ public static partial class QuartzExtensions
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue<T>(this ISchedulerFactory factory, string queue, Expression<Action<T>> methodCall) where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory);
     }
     
     /// <summary>
@@ -94,8 +88,7 @@ public static partial class QuartzExtensions
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue<T>(this ISchedulerFactory factory, Expression<Func<T, Task>> methodCall) where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory);
+        return InternalEnqueue(Job.FromExpression(methodCall), factory);
     }
     
     /// <summary>
@@ -108,8 +101,7 @@ public static partial class QuartzExtensions
     /// <returns>A <see cref="Task{TResult}"/> that represents the asynchronous operation, returning the <see cref="TriggerKey"/> of the enqueued job.</returns>
     public static Task<TriggerKey> Enqueue<T>(this ISchedulerFactory factory, string queue, Expression<Func<T, Task>> methodCall) where T : notnull
     {
-        var job = Job.FromExpression(methodCall);
-        return InternalEnqueue(job, factory, queue);
+        return InternalEnqueue(Job.FromExpression(methodCall, queue), factory);
     }
     
 }
