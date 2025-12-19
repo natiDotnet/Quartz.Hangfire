@@ -11,9 +11,9 @@ public static partial class QuartzJob
     /// <param name="factory">The scheduler factory</param>
     /// <param name="jobKeys">One or more job keys to delete</param>
     /// <returns>True if all jobs were successfully deleted</returns>
-    private static async Task<bool> InternalDelete(ISchedulerFactory factory, params JobKey[] jobKeys)
+    private static async Task<bool> InternalDelete(ISchedulerFactory? factory = null, IScheduler? scheduler = null, params JobKey[] jobKeys)
     {
-        IScheduler scheduler = await factory.GetScheduler();
+        scheduler = await GetScheduler(factory, scheduler);
         if (jobKeys.Length == 1)
         {
             return await scheduler.DeleteJob(jobKeys[0]);
@@ -31,7 +31,7 @@ public static partial class QuartzJob
     public static Task<bool> Delete(this ISchedulerFactory factory, JobKey jobKey)
     {
         ArgumentNullException.ThrowIfNull(jobKey);
-        return InternalDelete(factory, jobKey);
+        return InternalDelete(factory, scheduler: null, jobKey);
     }
     
     /// <summary>
@@ -44,7 +44,7 @@ public static partial class QuartzJob
     public static Task<bool> Delete(this ISchedulerFactory factory, JobKey[] jobKeys)
     {
         ArgumentNullException.ThrowIfNull(jobKeys);
-        return InternalDelete(factory, jobKeys);
+        return InternalDelete(factory, scheduler: null, jobKeys);
     }
     
 }

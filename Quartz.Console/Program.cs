@@ -8,11 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Quartz;
 using Quartz.Hangfire;
 using Quartz.Console;
-using Quartz.Hangfire.Listeners;
 using Quartz.Hangfire.Queue;
-using Quartz.Impl;
-using Quartz.Impl.Matchers;
-using BackgroundJob = Quartz.Hangfire.BackgroundJob;
 
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
@@ -58,4 +54,6 @@ await scheduler.Enqueue<Test>(t => t.TesterAsync("big", CancellationToken.None))
 // Now you can enqueue anything
 // BenchmarkRunner.Run<ReflectionBenchmark>();
 // BackgroundJob.ContinueJobWith("test", () => Console.WriteLine("test"));
+RecurringJob.AddOrUpdate<Test>("tt", t => t.TesterAsync("rec"), Cron.Daily);
+RecurringJob.TriggerJob("test");
 await host.RunAsync();

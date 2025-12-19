@@ -32,16 +32,6 @@ public static partial class QuartzJob
         DateTimeOffset? enqueueAt = null,
         IScheduler? scheduler = null)
     {
-        IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
-            .WithIdentity($"{job}-{Guid.NewGuid()}")
-            .Build();
-
-        var triggerBuilder = TriggerBuilder.Create();
-        if (delay.HasValue || enqueueAt.HasValue)
-            triggerBuilder.StartAt(enqueueAt ?? DateTimeOffset.UtcNow.Add(delay!.Value));
-        else
-            triggerBuilder.StartNow();
-        
         var filters = JobFilterProviders.Providers.GetFilters(job).ToList();
         var retry = filters
             .Select(f => f.Instance)
@@ -65,8 +55,18 @@ public static partial class QuartzJob
             concurrentRetry.Attempts = concurrentRetry.DelaysInSeconds.Length;
         }
         
+        IJobDetail expressionJob = JobBuilder.Create<ExpressionJob>()
+            .WithIdentity($"{job}-{Guid.NewGuid()}")
+            .Build();
+        
         string queue = job.Queue ?? Default;
         int priority = QuartzQueues.GetPriority(queue);
+        
+        var triggerBuilder = TriggerBuilder.Create();
+        if (delay.HasValue || enqueueAt.HasValue)
+            triggerBuilder.StartAt(enqueueAt ?? DateTimeOffset.UtcNow.Add(delay!.Value));
+        else
+            triggerBuilder.StartNow();
 
         ITrigger trigger = triggerBuilder
             .ForJob(expressionJob)
@@ -79,15 +79,17 @@ public static partial class QuartzJob
             .WithIdentity($"{job}-{Guid.NewGuid()}")
             .WithPriority(priority)
             .Build();
-        scheduler ??= await GetScheduler(factory);
+        scheduler = await GetScheduler(factory, scheduler);
         await scheduler.ScheduleJob(expressionJob, trigger);
         return trigger.Key;
     }
 
-    private static async Task<IScheduler> GetScheduler(ISchedulerFactory? factory = null)
+    private static async Task<IScheduler> GetScheduler(ISchedulerFactory? factory, IScheduler? scheduler)
     {
-        return factory is not null
+        scheduler ??= factory is not null
             ? await factory.GetScheduler()
             : await StdSchedulerFactory.GetDefaultScheduler();
+        await scheduler.Start();
+        return scheduler;
     }
 }

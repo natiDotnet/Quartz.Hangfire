@@ -14,12 +14,12 @@ public static partial class QuartzJob
     /// <summary>
     /// Schedules a continuation job to be executed after the parent job completes.
     /// </summary>
-    /// <param name="factory">The scheduler factory.</param>
     /// <param name="job">The continuation job to execute.</param>
     /// <param name="parentTriggerKey">The trigger key of the parent job.</param>
     /// <param name="queue">The queue to enqueue the continuation job to. Defaults to "default".</param>
     /// <param name="options">The continuation options. Defaults to <see cref="JobContinuationOptions.OnlyOnSucceededState"/></param>
-    /// <param name="scheduler">The scheduler </param>
+    /// <param name="factory">The scheduler factory.</param>
+    /// <param name="scheduler">The scheduler instance.</param>
     /// <returns>
     /// A <see cref="Task{TResult}"/> that returns <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger was not found.
@@ -32,7 +32,7 @@ public static partial class QuartzJob
         ISchedulerFactory? factory = null,
         IScheduler? scheduler = null)
     {
-        scheduler ??= await GetScheduler(factory);
+        scheduler = await GetScheduler(factory, scheduler);
         ITrigger? parentTrigger = await scheduler.GetTrigger(parentTriggerKey);
         if (parentTrigger is null)
         {
