@@ -9,7 +9,7 @@ namespace Quartz.Hangfire;
 /// <summary>
 /// Extension methods for Quartz scheduler operations
 /// </summary>
-public static partial class QuartzExtensions
+public static partial class QuartzJob
 {
     /// <summary>
     /// The default queue name if none is specified
@@ -25,7 +25,7 @@ public static partial class QuartzExtensions
     /// <param name="enqueueAt">Optional specific date/time when the job should start executing</param>
     /// <param name="scheduler">The scheduler used to get the Quartz scheduler instance</param>
     /// <returns>The TriggerKey of the scheduled job</returns>
-    internal static async Task<TriggerKey> InternalEnqueue(
+    private static async Task<TriggerKey> InternalEnqueue(
         Job job,
         ISchedulerFactory? factory = null,
         TimeSpan? delay = null,

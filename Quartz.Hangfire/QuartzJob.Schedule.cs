@@ -6,7 +6,7 @@ namespace Quartz.Hangfire;
 /// <summary>
 /// Extension methods for Quartz scheduler operations
 /// </summary>
-public static partial class QuartzExtensions
+public static partial class QuartzJob
 {
     /// <summary>
     /// Schedules a job to be executed after a specified delay

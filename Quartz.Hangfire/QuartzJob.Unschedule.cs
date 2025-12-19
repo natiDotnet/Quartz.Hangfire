@@ -3,7 +3,7 @@ namespace Quartz.Hangfire;
 /// <summary>
 /// Extension methods for Quartz scheduler operations
 /// </summary>
-public static partial class QuartzExtensions
+public static partial class QuartzJob
 {
     /// <summary>
     /// Internal method to unschedule multiple jobs based on their trigger keys
