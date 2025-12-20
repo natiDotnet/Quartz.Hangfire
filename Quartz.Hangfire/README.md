@@ -10,11 +10,13 @@ QuartzHangfire.Extensions is a .NET library that brings Hangfire-like syntax and
 - **Hangfire-like Syntax**: Use familiar Hangfire-style method calls with Quartz.NET under the hood.
 - **Immediate Execution**: Enqueue jobs for immediate execution.
 - **Delayed Execution**: Schedule jobs to run after a specified delay.
+- **Recurring Jobs**: Schedule recurring jobs using CRON expressions.
 - **Job Continuation**: Chain jobs together to run one after another.
 - **Job Deletion**: Delete jobs by their `JobKey`.
 - **Job Rescheduling**: Reschedule jobs with a new trigger time.
 - **Queue Support**: Assign jobs to specific queues and configure queue priorities.
 - **Async/Await Support**: Full support for asynchronous methods.
+- **Hangfire Attribute Support**: Respects `[AutomaticRetry]` and `[DisableConcurrentExecution]` attributes.
 
 ## Installation
 
@@ -79,6 +81,7 @@ For job prioritization, you can optionally configure queues using the `UseQueuei
 
 ```csharp
 using Quartz.Hangfire; // Make sure to include this namespace
+using Quartz.Hangfire.Queue;
 
 builder.Services.AddQuartz(q => 
 { 
@@ -100,8 +103,12 @@ builder.Services.AddQuartz(q =>
 Jobs that should run as soon as possible.
 
 ```csharp
-// Enqueue a static method to the "default" queue
+// Using ISchedulerFactory extension methods
 var triggerKey = await schedulerFactory.Enqueue(() => Console.WriteLine("Hello World"));
+
+// Using IScheduler extension methods
+var scheduler = await schedulerFactory.GetScheduler();
+await scheduler.Enqueue(() => Console.WriteLine("Hello World"));
 
 // Enqueue an instance method of a registered service
 await schedulerFactory.Enqueue<MyService>(x => x.ProcessDataAsync());
@@ -118,8 +125,32 @@ Jobs that should run after a specified delay.
 // Schedule a job to run after 5 minutes in the "default" queue
 var triggerKey = await schedulerFactory.Schedule(() => SendEmail(), TimeSpan.FromMinutes(5));
 
+// Using IScheduler extension methods
+await scheduler.Schedule(() => SendEmail(), TimeSpan.FromMinutes(5));
+
 // Schedule with a specific queue
 await schedulerFactory.Schedule("emails", () => SendEmail(), TimeSpan.FromMinutes(5));
+```
+
+### Recurring Jobs
+
+Schedule jobs to run repeatedly on a schedule defined by a CRON expression.
+
+```csharp
+// Schedule a recurring job to run daily at 8:00 AM
+await schedulerFactory.AddOrUpdate("daily-report", () => GenerateReport(), Cron.Daily(8));
+
+// Using IScheduler extension methods
+await scheduler.AddOrUpdate("daily-report", () => GenerateReport(), Cron.Daily(8));
+
+// Schedule a recurring job with a specific queue
+await schedulerFactory.AddOrUpdate("hourly-sync", "critical", () => SyncData(), Cron.Hourly());
+
+// Trigger a recurring job immediately
+await schedulerFactory.TriggerJob("daily-report");
+
+// Remove a recurring job
+await schedulerFactory.RemoveIfExists("daily-report");
 ```
 
 ### Continue Jobs with Chained Execution
@@ -163,11 +194,58 @@ Change the schedule of an existing job.
 
 ```csharp
 // Reschedule a job to run at a new time (e.g., 10 minutes from now)
-bool rescheduled = await schedulerFactory.Reschedule(triggerKey, TimeSpan.FromMinutes(10));
-if (rescheduled)
+var nextRun = await schedulerFactory.Reschedule(triggerKey, TimeSpan.FromMinutes(10));
+if (nextRun.HasValue)
 {
-    Console.WriteLine("Job rescheduled successfully.");
+    Console.WriteLine($"Job rescheduled successfully. Next run: {nextRun}");
 }
+```
+
+### Unschedule a Job
+
+Unschedule a job using its `TriggerKey`.
+
+```csharp
+// Unschedule a single job
+bool unscheduled = await schedulerFactory.UnscheduleJobs(triggerKey);
+if (unscheduled)
+{
+    Console.WriteLine("Job unscheduled successfully.");
+}
+```
+
+## Hangfire Attribute Support
+
+The library respects common Hangfire attributes by translating them into Quartz.NET concepts.
+
+### `[AutomaticRetry]`
+
+Decorate your job method with `[AutomaticRetry]` to control its retry behavior. If the job fails, it will be automatically rescheduled based on the attribute's properties.
+
+```csharp
+[AutomaticRetry(Attempts = 5, DelaysInSeconds = [30, 60, 120, 300, 600])]
+public void MyRetryableJob()
+{
+    // Logic that might fail
+}
+
+// Enqueue the job
+await schedulerFactory.Enqueue(() => MyRetryableJob());
+```
+
+### `[DisableConcurrentExecution]`
+
+This attribute ensures that only one instance of a job runs at a time. If a new job is triggered while an existing one is running, it will be retried later. The `TimeoutSec` property controls the lock timeout.
+
+```csharp
+[DisableConcurrentExecution(TimeoutSec = 60 * 5)] // 5-minute timeout
+public async Task MyLongRunningJob()
+{
+    await Task.Delay(TimeSpan.FromMinutes(1));
+}
+
+// Enqueue the job
+await schedulerFactory.Enqueue(() => MyLongRunningJob());
 ```
 
 ## Supported Method Signatures
@@ -202,4 +280,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Quartz.NET](https://www.quartz-scheduler.net/) - The powerful job scheduling system for .NET.
 - [Hangfire](https://www.hangfire.io/) - The library that inspired this project's syntax.
-```

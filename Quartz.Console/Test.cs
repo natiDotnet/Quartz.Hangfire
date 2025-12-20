@@ -5,7 +5,7 @@ namespace Quartz.Console;
 public class Test
 {
     [DisableConcurrentExecution(30)]
-    // [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Delete, DelaysInSeconds = [10], Order = 2)]
+    [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Delete, DelaysInSeconds = [10], Order = 2)]
     public async Task<string> TesterAsync(string name, CancellationToken ct = default)
     {
         await Task.Delay(5000, ct);

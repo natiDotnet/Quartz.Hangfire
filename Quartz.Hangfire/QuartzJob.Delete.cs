@@ -9,6 +9,7 @@ public static partial class QuartzJob
     /// Internal method to delete one or more jobs from the scheduler
     /// </summary>
     /// <param name="factory">The scheduler factory</param>
+    /// <param name="scheduler">The scheduler instance</param>
     /// <param name="jobKeys">One or more job keys to delete</param>
     /// <returns>True if all jobs were successfully deleted</returns>
     private static async Task<bool> InternalDelete(ISchedulerFactory? factory = null, IScheduler? scheduler = null, params JobKey[] jobKeys)

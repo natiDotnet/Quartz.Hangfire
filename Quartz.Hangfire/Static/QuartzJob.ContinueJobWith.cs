@@ -19,7 +19,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static async Task<bool> ContinueJobWith(
+    private static async Task<bool> ContinueJobWith(
         TriggerKey parentTriggerKey,
         Expression<Action> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
@@ -37,7 +37,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static async Task<bool> ContinueJobWith(
+    private static async Task<bool> ContinueJobWith(
         string parentTriggerKey,
         Expression<Action> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
@@ -56,7 +56,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith<T>(
+    private static Task<bool> ContinueJobWith<T>(
         TriggerKey parentTriggerKey,
         Expression<Action<T>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
@@ -75,7 +75,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith<T>(
+    private static Task<bool> ContinueJobWith<T>(
         string parentTriggerKey,
         Expression<Action<T>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
@@ -94,7 +94,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith(
+    private static Task<bool> ContinueJobWith(
         TriggerKey parentTriggerKey,
         string queue,
         Expression<Action> methodCall,
@@ -114,7 +114,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith(
+    private static Task<bool> ContinueJobWith(
         string parentTriggerKey,
         string queue,
         Expression<Action> methodCall,
@@ -135,7 +135,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith<T>(
+    private static Task<bool> ContinueJobWith<T>(
         TriggerKey parentTriggerKey,
         string queue,
         Expression<Action<T>> methodCall,
@@ -156,7 +156,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith<T>(
+    private static Task<bool> ContinueJobWith<T>(
         string parentTriggerKey,
         string queue,
         Expression<Action<T>> methodCall,
@@ -175,7 +175,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith(
+    private static Task<bool> ContinueJobWith(
         TriggerKey parentTriggerKey,
         Expression<Func<Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
@@ -193,7 +193,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith(
+    private static Task<bool> ContinueJobWith(
         string parentTriggerKey,
         Expression<Func<Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
@@ -212,7 +212,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith(
+    private static Task<bool> ContinueJobWith(
         TriggerKey parentTriggerKey,
         string queue,
         Expression<Func<Task>> methodCall,
@@ -232,7 +232,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith(
+    private static Task<bool> ContinueJobWith(
         string parentTriggerKey,
         string queue,
         Expression<Func<Task>> methodCall,
@@ -252,7 +252,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith<T>(
+    private static Task<bool> ContinueJobWith<T>(
         TriggerKey parentTriggerKey,
         Expression<Func<T, Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
@@ -271,7 +271,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith<T>(
+    private static Task<bool> ContinueJobWith<T>(
         string parentTriggerKey,
         Expression<Func<T, Task>> methodCall,
         JobContinuationOptions options = JobContinuationOptions.OnlyOnSucceededState)
@@ -291,7 +291,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith<T>(
+    private static Task<bool> ContinueJobWith<T>(
         TriggerKey parentTriggerKey,
         string queue,
         Expression<Func<T, Task>> methodCall,
@@ -312,7 +312,7 @@ public static partial class QuartzJob
     /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the continuation was successfully scheduled;
     /// otherwise, <c>false</c> if the parent trigger could not be found.
     /// </returns>
-    public static Task<bool> ContinueJobWith<T>(
+    private static Task<bool> ContinueJobWith<T>(
         string parentTriggerKey,
         string queue,
         Expression<Func<T, Task>> methodCall,

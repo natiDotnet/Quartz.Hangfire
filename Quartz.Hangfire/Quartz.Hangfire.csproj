@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <Version>1.0.3</Version>
+        <Version>1.1.0</Version>
         <PackageId>QuartzHangfire.Extensions</PackageId>
         <Title>QuartzHangfire.Extensions</Title>
         <Authors>Nati</Authors>
@@ -22,7 +22,7 @@
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <PackageReleaseNotes>fix: queue support</PackageReleaseNotes>
+        <PackageReleaseNotes>hangfire automatic retry and diable concurrent execution support, Ischeduler extession support</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>

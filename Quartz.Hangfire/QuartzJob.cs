@@ -11,6 +11,12 @@ namespace Quartz.Hangfire;
 /// </summary>
 public static partial class QuartzJob
 {
+    internal static IScheduler? Scheduler;
+
+    internal static void Initialize(IScheduler scheduler)
+    {
+        Scheduler = scheduler;
+    }
     /// <summary>
     /// The default queue name if none is specified
     /// </summary>
@@ -89,7 +95,10 @@ public static partial class QuartzJob
         scheduler ??= factory is not null
             ? await factory.GetScheduler()
             : await StdSchedulerFactory.GetDefaultScheduler();
-        await scheduler.Start();
+        if (!scheduler.IsStarted)
+        {
+            await scheduler.Start();
+        }
         return scheduler;
     }
 }
